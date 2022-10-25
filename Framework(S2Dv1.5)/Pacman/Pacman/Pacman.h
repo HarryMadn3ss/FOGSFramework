@@ -17,24 +17,24 @@ using namespace S2D;
 // Declares the Pacman class which inherits from the Game class.
 // This allows us to overload the Game class methods to help us
 // load content, draw and update our game.
-class Pacman : public Game
+class Pacman : public Game  //rename once i have a game title
 {
 private:
 	// Data to represent Pacman
 	
-	Vector2* _pacmanPosition;
-	Rect* _pacmanSourceRect;
-	Texture2D* _pacmanTexture;
-	const float _cPacmanSpeed;
+	Vector2* _playerPosition;
+	Rect* _playerSourceRect;
+	Texture2D* _playerTexture;
+	const float _cPlayerSpeed;
 
 	//change in sprite
 	int _playerDirection;
 
 	// Data to represent Munchie
 	int _frameCount;
-	Rect* _munchieRect;
-	Texture2D* _munchieBlueTexture;
-	Texture2D* _munchieInvertedTexture;
+	Rect* _collectableRect;
+	Texture2D* _collectableBlueTexture;
+	Texture2D* _collectableInvertedTexture;
 
 	// Position for String
 	Vector2* _stringPosition;

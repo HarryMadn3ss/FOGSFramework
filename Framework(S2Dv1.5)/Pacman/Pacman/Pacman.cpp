@@ -2,7 +2,7 @@
 
 #include <sstream>
 
-Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPacmanSpeed(0.1f)
+Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPlayerSpeed(0.1f)
 {
 	_frameCount = 0;
 	_paused = false;
@@ -20,11 +20,11 @@ Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPacmanSpeed(0.1f)
 
 Pacman::~Pacman()
 {
-	delete _pacmanTexture;
-	delete _pacmanSourceRect;
-	delete _munchieBlueTexture;
-	delete _munchieInvertedTexture;
-	delete _munchieRect;
+	delete _playerTexture;
+	delete _playerSourceRect;
+	delete _collectableBlueTexture;
+	delete _collectableInvertedTexture;
+	delete _collectableRect;
 	delete _menuBackground;
 	delete _menuRectangle;
 	delete _menuStringPosition;
@@ -36,17 +36,17 @@ Pacman::~Pacman()
 void Pacman::LoadContent()
 {
 	// Load Pacman
-	_pacmanTexture = new Texture2D();
-	_pacmanTexture->Load("Textures/Pacman.tga", false);
-	_pacmanPosition = new Vector2(350.0f, 350.0f);
-	_pacmanSourceRect = new Rect(0.0f, 0.0f, 32, 32);
+	_playerTexture = new Texture2D();
+	_playerTexture->Load("Textures/Pacman.tga", false);
+	_playerPosition = new Vector2(350.0f, 350.0f);
+	_playerSourceRect = new Rect(0.0f, 0.0f, 32, 32);
 
 	// Load Munchie
-	_munchieBlueTexture = new Texture2D();
-	_munchieBlueTexture->Load("Textures/Munchie.tga", true);
-	_munchieInvertedTexture = new Texture2D();
-	_munchieInvertedTexture->Load("Textures/MunchieInverted.tga", true);
-	_munchieRect = new Rect(100.0f, 450.0f, 12, 12);
+	_collectableBlueTexture = new Texture2D();
+	_collectableBlueTexture->Load("Textures/Munchie.tga", true);
+	_collectableInvertedTexture = new Texture2D();
+	_collectableInvertedTexture->Load("Textures/MunchieInverted.tga", true);
+	_collectableRect = new Rect(100.0f, 450.0f, 12, 12);
 
 	// Set string position
 	_stringPosition = new Vector2(10.0f, 25.0f);
@@ -94,34 +94,38 @@ void Pacman::Update(int elapsedTime)
 
 			// Checks if D key is pressed
 			if (keyboardState->IsKeyDown(Input::Keys::D)) {
-				_pacmanPosition->X += _cPacmanSpeed * elapsedTime; //Moves Pacman across X axis
+				_playerPosition->X += _cPlayerSpeed * elapsedTime; //Moves Pacman across X axis
 				_playerDirection = 1;
 			}
 			else if (keyboardState->IsKeyDown(Input::Keys::A)){
-				_pacmanPosition->X -= _cPacmanSpeed * elapsedTime;
+				_playerPosition->X -= _cPlayerSpeed * elapsedTime;
 			_playerDirection = 2;
 		}
 				
 			else if (keyboardState->IsKeyDown(Input::Keys::W)) {
-				_pacmanPosition->Y -= _cPacmanSpeed * elapsedTime;
+				_playerPosition->Y -= _cPlayerSpeed * elapsedTime;
 				_playerDirection = 3;
 			}
 			else if (keyboardState->IsKeyDown(Input::Keys::S)) {
-				_pacmanPosition->Y += _cPacmanSpeed * elapsedTime;
+				_playerPosition->Y += _cPlayerSpeed * elapsedTime;
 				_playerDirection = 4;
 			}
 			switch (_playerDirection) {
 			case 1: //right
-				_pacmanSourceRect = new Rect(0.0f, 0.0f, 32, 32);
+				//_playerSourceRect = new Rect(0.0f, 0.0f, 32, 32);
+				_playerSourceRect->Y = 0.0f;
 				break;
 			case 2: //left
-				_pacmanSourceRect = new Rect(0.0f,64.0f, 32, 32);
+				//_playerSourceRect = new Rect(0.0f,64.0f, 32, 32);
+				_playerSourceRect->Y = 64.0f;
 				break;
 			case 3://up
-				_pacmanSourceRect = new Rect(0.0f, 96.0f, 32, 32);
+				//_playerSourceRect = new Rect(0.0f, 96.0f, 32, 32);
+				_playerSourceRect->Y = 96.0f;
 				break;
 			case 4://down
-				_pacmanSourceRect = new Rect(0.0f, 32.0f, 32, 32);
+				//_playerSourceRect = new Rect(0.0f, 32.0f, 32, 32);
+				_playerSourceRect->Y = 32.0f;
 				break;
 			}
 	//Pause
@@ -151,20 +155,20 @@ void Pacman::Update(int elapsedTime)
 
 	//Getting pacman to wrap around the screen
 	//right
-			if (_pacmanPosition->X + _pacmanSourceRect->Width > Graphics::GetViewportWidth()) {
-				_pacmanPosition->X = 0 * Graphics::GetViewportWidth();
+			if (_playerPosition->X + _playerSourceRect->Width > Graphics::GetViewportWidth()) {
+				_playerPosition->X = 0 * Graphics::GetViewportWidth();
 			}
 	//left
-			if (_pacmanPosition->X < 0 * Graphics::GetViewportWidth()) {
-				_pacmanPosition->X = Graphics::GetViewportWidth() - _pacmanSourceRect->Width;
+			if (_playerPosition->X < 0 * Graphics::GetViewportWidth()) {
+				_playerPosition->X = Graphics::GetViewportWidth() - _playerSourceRect->Width;
 			}
 	//up
-			if (_pacmanPosition->Y < 0 * Graphics::GetViewportHeight()) {
-				_pacmanPosition->Y = Graphics::GetViewportHeight() - _pacmanSourceRect->Height;
+			if (_playerPosition->Y < 0 * Graphics::GetViewportHeight()) {
+				_playerPosition->Y = Graphics::GetViewportHeight() - _playerSourceRect->Height;
 				}
 	//down
-			if (_pacmanPosition->Y + _pacmanSourceRect->Height > Graphics::GetViewportHeight()) {
-				_pacmanPosition->Y = 0 * Graphics::GetViewportHeight();
+			if (_playerPosition->Y + _playerSourceRect->Height > Graphics::GetViewportHeight()) {
+				_playerPosition->Y = 0 * Graphics::GetViewportHeight();
 			}
 			_frameCount++;
 	
@@ -176,10 +180,10 @@ void Pacman::Draw(int elapsedTime)
 {
 	// Allows us to easily create a string
 	std::stringstream stream;
-	stream << "Pacman X: " << _pacmanPosition->X << " Y: " << _pacmanPosition->Y;
+	stream << "Player X: " << _playerPosition->X << " Y: " << _playerPosition->Y;
 
 	SpriteBatch::BeginDraw(); // Starts Drawing
-	SpriteBatch::Draw(_pacmanTexture, _pacmanPosition, _pacmanSourceRect); // Draws Pacman
+	SpriteBatch::Draw(_playerTexture, _playerPosition, _playerSourceRect); // Draws Pacman
 
 
 
@@ -188,14 +192,14 @@ void Pacman::Draw(int elapsedTime)
 	if (_frameCount < 30)
 	{
 		// Draws Red Munchie
-		SpriteBatch::Draw(_munchieInvertedTexture, _munchieRect, nullptr, Vector2::Zero, 1.0f, 0.0f, Color::White, SpriteEffect::NONE);
+		SpriteBatch::Draw(_collectableInvertedTexture, _collectableRect, nullptr, Vector2::Zero, 1.0f, 0.0f, Color::White, SpriteEffect::NONE);
 
 		
 	}
 	else
 	{
 		// Draw Blue Munchie
-		SpriteBatch::Draw(_munchieBlueTexture, _munchieRect, nullptr, Vector2::Zero, 1.0f, 0.0f, Color::White, SpriteEffect::NONE);
+		SpriteBatch::Draw(_collectableBlueTexture, _collectableRect, nullptr, Vector2::Zero, 1.0f, 0.0f, Color::White, SpriteEffect::NONE);
 		
 		
 
