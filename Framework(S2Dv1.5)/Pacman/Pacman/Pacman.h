@@ -20,21 +20,33 @@ using namespace S2D;
 class Pacman : public Game  //rename once i have a game title
 {
 private:
-	// Data to represent Pacman
+	// Data to represent Player
 	
 	Vector2* _playerPosition;
 	Rect* _playerSourceRect;
-	Texture2D* _playerTexture;
+	Texture2D* _playerTexture;	
+	int _playerFrame;
+	int _playerCurrentFrameTime;
+
+
 	const float _cPlayerSpeed;
+	const int _cPlayerFrameTime;
+
 
 	//change in sprite
 	int _playerDirection;
 
 	// Data to represent Munchie
-	int _frameCount;
+	//int _CollectableFrame;
 	Rect* _collectableRect;
-	Texture2D* _collectableBlueTexture;
-	Texture2D* _collectableInvertedTexture;
+	Texture2D* _collectableTexture;
+	Vector2* _collectablePosition;
+	
+	int _collectableFrame;
+	int _collectableCurrentFrameTime;
+
+	const int _cCollectableFrameTime;
+
 
 	// Position for String
 	Vector2* _stringPosition;

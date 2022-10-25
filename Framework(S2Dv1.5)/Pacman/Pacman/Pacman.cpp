@@ -2,12 +2,18 @@
 
 #include <sstream>
 
-Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPlayerSpeed(0.1f)
+Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPlayerSpeed(0.1f), _cPlayerFrameTime(250), _cCollectableFrameTime(500)
 {
-	_frameCount = 0;
+	
 	_paused = false;
 	_pKeyDown = false;
 	_start = true;
+
+	_playerFrame = 0;
+	_playerCurrentFrameTime = 0;
+
+	_collectableFrame = 0;
+	_collectableCurrentFrameTime = 0;
 	
 
 	//Initialise important Game aspects
@@ -22,8 +28,8 @@ Pacman::~Pacman()
 {
 	delete _playerTexture;
 	delete _playerSourceRect;
-	delete _collectableBlueTexture;
-	delete _collectableInvertedTexture;
+	delete _collectableTexture;
+	
 	delete _collectableRect;
 	delete _menuBackground;
 	delete _menuRectangle;
@@ -41,12 +47,11 @@ void Pacman::LoadContent()
 	_playerPosition = new Vector2(350.0f, 350.0f);
 	_playerSourceRect = new Rect(0.0f, 0.0f, 32, 32);
 
-	// Load Munchie
-	_collectableBlueTexture = new Texture2D();
-	_collectableBlueTexture->Load("Textures/Munchie.tga", true);
-	_collectableInvertedTexture = new Texture2D();
-	_collectableInvertedTexture->Load("Textures/MunchieInverted.tga", true);
-	_collectableRect = new Rect(100.0f, 450.0f, 12, 12);
+	// Load Collectable
+	_collectableTexture = new Texture2D();
+	_collectableTexture->Load("Textures/CollectableTexture.png", false);
+	_collectablePosition = new Vector2(100.0f, 450.0f);
+	_collectableRect = new Rect(0.0f, 0.0f, 32, 32);
 
 	// Set string position
 	_stringPosition = new Vector2(10.0f, 25.0f);
@@ -95,22 +100,69 @@ void Pacman::Update(int elapsedTime)
 			// Checks if D key is pressed
 			if (keyboardState->IsKeyDown(Input::Keys::D)) {
 				_playerPosition->X += _cPlayerSpeed * elapsedTime; //Moves Pacman across X axis
-				_playerDirection = 1;
+				_playerDirection = 0;
 			}
-			else if (keyboardState->IsKeyDown(Input::Keys::A)){
+			if (keyboardState->IsKeyDown(Input::Keys::A)){
 				_playerPosition->X -= _cPlayerSpeed * elapsedTime;
 			_playerDirection = 2;
 		}
 				
-			else if (keyboardState->IsKeyDown(Input::Keys::W)) {
+			if (keyboardState->IsKeyDown(Input::Keys::W)) {
 				_playerPosition->Y -= _cPlayerSpeed * elapsedTime;
 				_playerDirection = 3;
 			}
-			else if (keyboardState->IsKeyDown(Input::Keys::S)) {
+			if (keyboardState->IsKeyDown(Input::Keys::S)) {
 				_playerPosition->Y += _cPlayerSpeed * elapsedTime;
-				_playerDirection = 4;
+				_playerDirection = 1;
 			}
-			switch (_playerDirection) {
+
+
+
+
+			//animating the player
+
+			_playerCurrentFrameTime += elapsedTime;
+
+			if (_playerCurrentFrameTime > _cPlayerFrameTime) {
+
+				_playerFrame++;
+
+				if (_playerFrame >= 2) {
+					_playerFrame = 0;
+				}
+
+				_playerCurrentFrameTime = 0;
+			}
+
+
+			//animating the collectable
+
+			_collectableCurrentFrameTime += elapsedTime;
+
+			if (_collectableCurrentFrameTime > _cCollectableFrameTime) {
+				_collectableFrame++;
+
+				if (_collectableFrame >= 2) {
+					_collectableFrame = 0;
+				}
+
+				_collectableCurrentFrameTime = 0;
+
+			}
+
+			//changing the direction of the player
+
+			_playerSourceRect->Y = _playerSourceRect->Height * _playerDirection;
+			_playerSourceRect->X = _playerSourceRect->Width * _playerFrame;
+
+			//Changing the colectable sheet
+
+			_collectableRect->X = _collectableRect->Width * _collectableFrame;
+
+
+
+
+			/*switch (_playerDirection) {
 			case 1: //right
 				//_playerSourceRect = new Rect(0.0f, 0.0f, 32, 32);
 				_playerSourceRect->Y = 0.0f;
@@ -127,7 +179,7 @@ void Pacman::Update(int elapsedTime)
 				//_playerSourceRect = new Rect(0.0f, 32.0f, 32, 32);
 				_playerSourceRect->Y = 32.0f;
 				break;
-			}
+			}*/
 	//Pause
 	
 
@@ -170,7 +222,7 @@ void Pacman::Update(int elapsedTime)
 			if (_playerPosition->Y + _playerSourceRect->Height > Graphics::GetViewportHeight()) {
 				_playerPosition->Y = 0 * Graphics::GetViewportHeight();
 			}
-			_frameCount++;
+			//_frameCount++;
 	
 		}
 	}
@@ -186,10 +238,11 @@ void Pacman::Draw(int elapsedTime)
 	SpriteBatch::Draw(_playerTexture, _playerPosition, _playerSourceRect); // Draws Pacman
 
 
+	SpriteBatch::Draw(_collectableTexture, _collectablePosition, _collectableRect); //Draw Collectable
 
 
 
-	if (_frameCount < 30)
+	/*if (_frameCount < 30)
 	{
 		// Draws Red Munchie
 		SpriteBatch::Draw(_collectableInvertedTexture, _collectableRect, nullptr, Vector2::Zero, 1.0f, 0.0f, Color::White, SpriteEffect::NONE);
@@ -205,7 +258,7 @@ void Pacman::Draw(int elapsedTime)
 
 		if (_frameCount >= 60)
 			_frameCount = 0;
-	}
+	}*/
 	
 	// Draws String
 	SpriteBatch::DrawString(stream.str().c_str(), _stringPosition, Color::Green);
