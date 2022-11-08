@@ -2,18 +2,24 @@
 
 #include <sstream>
 
-Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPlayerSpeed(0.1f), _cPlayerFrameTime(250), _cCollectableFrameTime(500)
+Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0.1f), _cFrameTime(250), _cCollectableFrameTime(500)
 {
-	
+		
+
+	_player = new Player();
+
+	_collectable = new Collectable();
+			
+
 	_paused = false;
 	_pKeyDown = false;
 	_start = true;
 
-	_playerFrame = 0;
-	_playerCurrentFrameTime = 0;
+	_player-> _frame = 0;
+	_player-> _currentFrameTime = 0;
 
-	_collectableFrame = 0;
-	_collectableCurrentFrameTime = 0;
+	_collectable-> _frame = 0;
+	_collectable-> _currentFrameTime = 0;
 	
 
 	//Initialise important Game aspects
@@ -26,11 +32,13 @@ Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPlayerSpeed(0.1f), 
 
 Pacman::~Pacman()
 {
-	delete _playerTexture;
-	delete _playerSourceRect;
-	delete _collectableTexture;
-	
-	delete _collectableRect;
+	delete _player;
+	delete _player-> _texture;
+	delete _player-> _sourceRect;
+
+	delete _collectable-> _texture;	
+	delete _collectable-> _rect;
+
 	delete _menuBackground;
 	delete _menuRectangle;
 	delete _menuStringPosition;
@@ -42,16 +50,16 @@ Pacman::~Pacman()
 void Pacman::LoadContent()
 {
 	// Load Pacman
-	_playerTexture = new Texture2D();
-	_playerTexture->Load("Textures/Pacman.tga", false);
-	_playerPosition = new Vector2(350.0f, 350.0f);
-	_playerSourceRect = new Rect(0.0f, 0.0f, 32, 32);
+	_player-> _texture = new Texture2D();
+	_player-> _texture->Load("Textures/Pacman.tga", false);
+	_player-> _position = new Vector2(350.0f, 350.0f);
+	_player-> _sourceRect = new Rect(0.0f, 0.0f, 32, 32);
 
 	// Load Collectable
-	_collectableTexture = new Texture2D();
-	_collectableTexture->Load("Textures/CollectableTexture.png", false);
-	_collectablePosition = new Vector2(100.0f, 450.0f);
-	_collectableRect = new Rect(0.0f, 0.0f, 32, 32);
+	_collectable-> _texture = new Texture2D();
+	_collectable-> _texture->Load("Textures/CollectableTexture.png", false);
+	_collectable-> _position = new Vector2(100.0f, 450.0f);
+	_collectable-> _rect = new Rect(0.0f, 0.0f, 32, 32);
 
 	// Set string position
 	_stringPosition = new Vector2(10.0f, 25.0f);
@@ -99,21 +107,21 @@ void Pacman::Update(int elapsedTime)
 
 			// Checks if D key is pressed
 			if (keyboardState->IsKeyDown(Input::Keys::D)) {
-				_playerPosition->X += _cPlayerSpeed * elapsedTime; //Moves Pacman across X axis
-				_playerDirection = 0;
+				_player-> _position->X += _cSpeed * elapsedTime; //Moves Pacman across X axis
+				_player-> _direction = 0;
 			}
 			if (keyboardState->IsKeyDown(Input::Keys::A)){
-				_playerPosition->X -= _cPlayerSpeed * elapsedTime;
-			_playerDirection = 2;
+				_player->_position->X -= _cSpeed * elapsedTime;
+			_player-> _direction = 2;
 		}
 				
 			if (keyboardState->IsKeyDown(Input::Keys::W)) {
-				_playerPosition->Y -= _cPlayerSpeed * elapsedTime;
-				_playerDirection = 3;
+				_player->_position->Y -= _cSpeed * elapsedTime;
+				_player-> _direction = 3;
 			}
 			if (keyboardState->IsKeyDown(Input::Keys::S)) {
-				_playerPosition->Y += _cPlayerSpeed * elapsedTime;
-				_playerDirection = 1;
+				_player->_position->Y += _cSpeed * elapsedTime;
+				_player-> _direction = 1;
 			}
 
 
@@ -121,43 +129,43 @@ void Pacman::Update(int elapsedTime)
 
 			//animating the player
 
-			_playerCurrentFrameTime += elapsedTime;
+			_player-> _currentFrameTime += elapsedTime;
 
-			if (_playerCurrentFrameTime > _cPlayerFrameTime) {
+			if (_player-> _currentFrameTime > _cFrameTime) {
 
-				_playerFrame++;
+				_player-> _frame++;
 
-				if (_playerFrame >= 2) {
-					_playerFrame = 0;
+				if (_player-> _frame >= 2) {
+					_player-> _frame = 0;
 				}
 
-				_playerCurrentFrameTime = 0;
+				_player-> _currentFrameTime = 0;
 			}
 
 
 			//animating the collectable
 
-			_collectableCurrentFrameTime += elapsedTime;
+			_collectable-> _currentFrameTime += elapsedTime;
 
-			if (_collectableCurrentFrameTime > _cCollectableFrameTime) {
-				_collectableFrame++;
+			if (_collectable-> _currentFrameTime > _cCollectableFrameTime) {
+				_collectable-> _frame++;
 
-				if (_collectableFrame >= 2) {
-					_collectableFrame = 0;
+				if (_collectable-> _frame >= 2) {
+					_collectable-> _frame = 0;
 				}
 
-				_collectableCurrentFrameTime = 0;
+				_collectable-> _currentFrameTime = 0;
 
 			}
 
 			//changing the direction of the player
 
-			_playerSourceRect->Y = _playerSourceRect->Height * _playerDirection;
-			_playerSourceRect->X = _playerSourceRect->Width * _playerFrame;
+			_player-> _sourceRect->Y = _player-> _sourceRect->Height * _player-> _direction;
+			_player-> _sourceRect->X = _player-> _sourceRect->Width * _player-> _frame;
 
 			//Changing the colectable sheet
 
-			_collectableRect->X = _collectableRect->Width * _collectableFrame;
+			_collectable-> _rect->X = _collectable-> _rect->Width * _collectable-> _frame;
 
 
 
@@ -207,20 +215,20 @@ void Pacman::Update(int elapsedTime)
 
 	//Getting pacman to wrap around the screen
 	//right
-			if (_playerPosition->X + _playerSourceRect->Width > Graphics::GetViewportWidth()) {
-				_playerPosition->X = 0 * Graphics::GetViewportWidth();
+			if (_player-> _position->X + _player-> _sourceRect->Width > Graphics::GetViewportWidth()) {
+				_player-> _position->X = 0 * Graphics::GetViewportWidth();
 			}
 	//left
-			if (_playerPosition->X < 0 * Graphics::GetViewportWidth()) {
-				_playerPosition->X = Graphics::GetViewportWidth() - _playerSourceRect->Width;
+			if (_player-> _position->X < 0 * Graphics::GetViewportWidth()) {
+				_player-> _position->X = Graphics::GetViewportWidth() - _player-> _sourceRect->Width;
 			}
 	//up
-			if (_playerPosition->Y < 0 * Graphics::GetViewportHeight()) {
-				_playerPosition->Y = Graphics::GetViewportHeight() - _playerSourceRect->Height;
+			if (_player-> _position->Y < 0 * Graphics::GetViewportHeight()) {
+				_player-> _position->Y = Graphics::GetViewportHeight() - _player-> _sourceRect->Height;
 				}
 	//down
-			if (_playerPosition->Y + _playerSourceRect->Height > Graphics::GetViewportHeight()) {
-				_playerPosition->Y = 0 * Graphics::GetViewportHeight();
+			if (_player-> _position->Y + _player-> _sourceRect->Height > Graphics::GetViewportHeight()) {
+				_player-> _position->Y = 0 * Graphics::GetViewportHeight();
 			}
 			//_frameCount++;
 	
@@ -232,13 +240,13 @@ void Pacman::Draw(int elapsedTime)
 {
 	// Allows us to easily create a string
 	std::stringstream stream;
-	stream << "Player X: " << _playerPosition->X << " Y: " << _playerPosition->Y;
+	stream << "Player X: " << _player-> _position->X << " Y: " << _player-> _position->Y;
 
 	SpriteBatch::BeginDraw(); // Starts Drawing
-	SpriteBatch::Draw(_playerTexture, _playerPosition, _playerSourceRect); // Draws Pacman
+	SpriteBatch::Draw(_player-> _texture, _player-> _position, _player-> _sourceRect); // Draws Pacman
 
 
-	SpriteBatch::Draw(_collectableTexture, _collectablePosition, _collectableRect); //Draw Collectable
+	SpriteBatch::Draw(_collectable-> _texture, _collectable-> _position, _collectable-> _rect); //Draw Collectable
 
 
 
