@@ -31,13 +31,14 @@ Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0.1f), _cFram
 }
 
 Pacman::~Pacman()
-{
-	delete _player;
+{	
 	delete _player-> _texture;
 	delete _player-> _sourceRect;
-
+	delete _player;
+	
 	delete _collectable-> _texture;	
 	delete _collectable-> _rect;
+	delete _collectable;
 
 	delete _menuBackground;
 	delete _menuRectangle;
