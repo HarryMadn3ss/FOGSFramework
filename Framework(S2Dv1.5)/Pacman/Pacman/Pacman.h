@@ -91,4 +91,10 @@ public:
 
 	/// <summary> Called every frame - draw game here. </summary>
 	void virtual Draw(int elapsedTime);
+
+	void Input(int elaspedTime, Input::KeyboardState* state);
+
+	void updatingPlayer(int elapsedTime);
+
+	void updatingCollectable(int elapsedTime);
 };

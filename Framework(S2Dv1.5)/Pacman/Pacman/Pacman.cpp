@@ -106,133 +106,13 @@ void Pacman::Update(int elapsedTime)
 		}
 		if (!_paused) {
 
-			// Checks if D key is pressed
-			if (keyboardState->IsKeyDown(Input::Keys::D)) {
-				_player-> _position->X += _cSpeed * elapsedTime; //Moves Pacman across X axis
-				_player-> _direction = 0;
-			}
-			if (keyboardState->IsKeyDown(Input::Keys::A)){
-				_player->_position->X -= _cSpeed * elapsedTime;
-			_player-> _direction = 2;
-		}
-				
-			if (keyboardState->IsKeyDown(Input::Keys::W)) {
-				_player->_position->Y -= _cSpeed * elapsedTime;
-				_player-> _direction = 3;
-			}
-			if (keyboardState->IsKeyDown(Input::Keys::S)) {
-				_player->_position->Y += _cSpeed * elapsedTime;
-				_player-> _direction = 1;
-			}
+			Input(elapsedTime, keyboardState);
 
+			updatingPlayer(elapsedTime);
 
+			updatingCollectable(elapsedTime);		
 
-
-			//animating the player
-
-			_player-> _currentFrameTime += elapsedTime;
-
-			if (_player-> _currentFrameTime > _cFrameTime) {
-
-				_player-> _frame++;
-
-				if (_player-> _frame >= 2) {
-					_player-> _frame = 0;
-				}
-
-				_player-> _currentFrameTime = 0;
-			}
-
-
-			//animating the collectable
-
-			_collectable-> _currentFrameTime += elapsedTime;
-
-			if (_collectable-> _currentFrameTime > _cCollectableFrameTime) {
-				_collectable-> _frame++;
-
-				if (_collectable-> _frame >= 2) {
-					_collectable-> _frame = 0;
-				}
-
-				_collectable-> _currentFrameTime = 0;
-
-			}
-
-			//changing the direction of the player
-
-			_player-> _sourceRect->Y = _player-> _sourceRect->Height * _player-> _direction;
-			_player-> _sourceRect->X = _player-> _sourceRect->Width * _player-> _frame;
-
-			//Changing the colectable sheet
-
-			_collectable-> _rect->X = _collectable-> _rect->Width * _collectable-> _frame;
-
-
-
-
-			/*switch (_playerDirection) {
-			case 1: //right
-				//_playerSourceRect = new Rect(0.0f, 0.0f, 32, 32);
-				_playerSourceRect->Y = 0.0f;
-				break;
-			case 2: //left
-				//_playerSourceRect = new Rect(0.0f,64.0f, 32, 32);
-				_playerSourceRect->Y = 64.0f;
-				break;
-			case 3://up
-				//_playerSourceRect = new Rect(0.0f, 96.0f, 32, 32);
-				_playerSourceRect->Y = 96.0f;
-				break;
-			case 4://down
-				//_playerSourceRect = new Rect(0.0f, 32.0f, 32, 32);
-				_playerSourceRect->Y = 32.0f;
-				break;
-			}*/
-	//Pause
-	
-
-	/*
-	//Coliding with walls
-	//right
-	if (_pacmanPosition->X + _pacmanSourceRect->Width > 1024) {
-		_pacmanPosition->X = 1024 - _pacmanSourceRect->Width;
-	}
-	//left
-	if (_pacmanPosition->X < 0) {
-		_pacmanPosition->X = 0;
-	}
-	//up
-	if (_pacmanPosition->Y < 0) {
-		_pacmanPosition->Y = 0;
-	}
-	//down
-	if (_pacmanPosition->Y + _pacmanSourceRect->Height > 768) {
-		_pacmanPosition->Y = 768 - _pacmanSourceRect->Height;
-	}
-*/
-
-
-
-	//Getting pacman to wrap around the screen
-	//right
-			if (_player-> _position->X + _player-> _sourceRect->Width > Graphics::GetViewportWidth()) {
-				_player-> _position->X = 0 * Graphics::GetViewportWidth();
-			}
-	//left
-			if (_player-> _position->X < 0 * Graphics::GetViewportWidth()) {
-				_player-> _position->X = Graphics::GetViewportWidth() - _player-> _sourceRect->Width;
-			}
-	//up
-			if (_player-> _position->Y < 0 * Graphics::GetViewportHeight()) {
-				_player-> _position->Y = Graphics::GetViewportHeight() - _player-> _sourceRect->Height;
-				}
-	//down
-			if (_player-> _position->Y + _player-> _sourceRect->Height > Graphics::GetViewportHeight()) {
-				_player-> _position->Y = 0 * Graphics::GetViewportHeight();
-			}
-			//_frameCount++;
-	
+		
 		}
 	}
 }
@@ -289,4 +169,88 @@ void Pacman::Draw(int elapsedTime)
 	}
 
 	SpriteBatch::EndDraw(); // Ends Drawing
+}
+
+
+void Pacman::Input(int elaspedTime, Input::KeyboardState* state) {
+
+	Input::KeyboardState* keyboardState = Input::Keyboard::GetState();
+	
+
+	// Checks if D key is pressed
+	if (keyboardState->IsKeyDown(Input::Keys::D)) {
+		_player->_position->X += _cSpeed * elaspedTime; //Moves Pacman across X axis
+		_player->_direction = 0;
+	}
+	if (keyboardState->IsKeyDown(Input::Keys::A)) {
+		_player->_position->X -= _cSpeed * elaspedTime;
+		_player->_direction = 2;
+	}
+
+	if (keyboardState->IsKeyDown(Input::Keys::W)) {
+		_player->_position->Y -= _cSpeed * elaspedTime;
+		_player->_direction = 3;
+	}
+	if (keyboardState->IsKeyDown(Input::Keys::S)) {
+		_player->_position->Y += _cSpeed * elaspedTime;
+		_player->_direction = 1;
+	}
+}
+
+void Pacman::updatingPlayer(int elapsedTime) {
+	_player->_currentFrameTime += elapsedTime;
+
+	if (_player->_currentFrameTime > _cFrameTime) {
+
+		_player->_frame++;
+
+		if (_player->_frame >= 2) {
+			_player->_frame = 0;
+		}
+
+		_player->_currentFrameTime = 0;
+	}
+
+	//crossing offscreen
+	if (_player->_position->X + _player->_sourceRect->Width > Graphics::GetViewportWidth()) {
+		_player->_position->X = 0 * Graphics::GetViewportWidth();
+	}
+	//left
+	if (_player->_position->X < 0 * Graphics::GetViewportWidth()) {
+		_player->_position->X = Graphics::GetViewportWidth() - _player->_sourceRect->Width;
+	}
+	//up
+	if (_player->_position->Y < 0 * Graphics::GetViewportHeight()) {
+		_player->_position->Y = Graphics::GetViewportHeight() - _player->_sourceRect->Height;
+	}
+	//down
+	if (_player->_position->Y + _player->_sourceRect->Height > Graphics::GetViewportHeight()) {
+		_player->_position->Y = 0 * Graphics::GetViewportHeight();
+	}
+
+	//changing the direction of the player
+
+	_player->_sourceRect->Y = _player->_sourceRect->Height * _player->_direction;
+	_player->_sourceRect->X = _player->_sourceRect->Width * _player->_frame;
+}
+
+void Pacman::updatingCollectable(int elapsedTime) {
+	//animating the collectable
+
+	_collectable->_currentFrameTime += elapsedTime;
+
+	if (_collectable->_currentFrameTime > _cCollectableFrameTime) {
+		_collectable->_frame++;
+
+		if (_collectable->_frame >= 2) {
+			_collectable->_frame = 0;
+		}
+
+		_collectable->_currentFrameTime = 0;
+
+	}
+
+	//Changing the colectable sheet
+
+	_collectable->_rect->X = _collectable->_rect->Width * _collectable->_frame;
 }
