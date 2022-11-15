@@ -26,6 +26,8 @@ struct Player
 	int _currentFrameTime;
 	int _direction;
 
+	float speedMultiplier;
+
 	
 };
 
@@ -92,7 +94,7 @@ public:
 	/// <summary> Called every frame - draw game here. </summary>
 	void virtual Draw(int elapsedTime);
 
-	void Input(int elaspedTime, Input::KeyboardState* state);
+	void Input(int elaspedTime, Input::KeyboardState* state, Input::MouseState* mouseState);
 
 	void updatingPlayer(int elapsedTime);
 

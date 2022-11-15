@@ -17,6 +17,7 @@ Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0.1f), _cFram
 
 	_player-> _frame = 0;
 	_player-> _currentFrameTime = 0;
+	_player->speedMultiplier = 1.0f;
 
 	_collectable-> _frame = 0;
 	_collectable-> _currentFrameTime = 0;
@@ -88,6 +89,7 @@ void Pacman::Update(int elapsedTime)
 {
 	// Gets the current state of the keyboard
 	Input::KeyboardState* keyboardState = Input::Keyboard::GetState();
+	Input::MouseState* mouseState = Input::Mouse::GetState();
 
 	if (keyboardState->IsKeyDown(Input::Keys::SPACE)) {
 		_start = false;
@@ -106,7 +108,7 @@ void Pacman::Update(int elapsedTime)
 		}
 		if (!_paused) {
 
-			Input(elapsedTime, keyboardState);
+			Input(elapsedTime, keyboardState, mouseState);
 
 			updatingPlayer(elapsedTime);
 
@@ -172,28 +174,42 @@ void Pacman::Draw(int elapsedTime)
 }
 
 
-void Pacman::Input(int elaspedTime, Input::KeyboardState* state) {
+void Pacman::Input(int elaspedTime, Input::KeyboardState* state, Input::MouseState* mouseState) {
 
 	Input::KeyboardState* keyboardState = Input::Keyboard::GetState();
 	
+	
+	//Sprint
+	if (keyboardState->IsKeyDown(Input::Keys::LEFTSHIFT)) {
+		_player->speedMultiplier = 5.0f;
+	}
+	else {
+		_player->speedMultiplier = 1.0f;
+	}
 
-	// Checks if D key is pressed
+	// Keyboard
 	if (keyboardState->IsKeyDown(Input::Keys::D)) {
-		_player->_position->X += _cSpeed * elaspedTime; //Moves Pacman across X axis
+		_player->_position->X += _cSpeed * elaspedTime * _player->speedMultiplier; //Moves Pacman across X axis
 		_player->_direction = 0;
 	}
 	if (keyboardState->IsKeyDown(Input::Keys::A)) {
-		_player->_position->X -= _cSpeed * elaspedTime;
+		_player->_position->X -= _cSpeed * elaspedTime * _player->speedMultiplier;
 		_player->_direction = 2;
 	}
 
 	if (keyboardState->IsKeyDown(Input::Keys::W)) {
-		_player->_position->Y -= _cSpeed * elaspedTime;
+		_player->_position->Y -= _cSpeed * elaspedTime * _player->speedMultiplier;
 		_player->_direction = 3;
 	}
 	if (keyboardState->IsKeyDown(Input::Keys::S)) {
-		_player->_position->Y += _cSpeed * elaspedTime;
+		_player->_position->Y += _cSpeed * elaspedTime * _player->speedMultiplier;
 		_player->_direction = 1;
+	}	
+
+	//Mouse
+	if (mouseState->LeftButton == Input::ButtonState::PRESSED) {
+		_collectable->_position->X = mouseState->X;
+		_collectable->_position->Y = mouseState->Y;
 	}
 }
 
