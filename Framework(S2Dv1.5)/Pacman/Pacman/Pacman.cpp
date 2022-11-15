@@ -21,6 +21,8 @@ Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0.1f), _cFram
 
 	_collectable-> _frame = 0;
 	_collectable-> _currentFrameTime = 0;
+
+	
 	
 
 	//Initialise important Game aspects
@@ -130,27 +132,7 @@ void Pacman::Draw(int elapsedTime)
 
 
 	SpriteBatch::Draw(_collectable-> _texture, _collectable-> _position, _collectable-> _rect); //Draw Collectable
-
-
-
-	/*if (_frameCount < 30)
-	{
-		// Draws Red Munchie
-		SpriteBatch::Draw(_collectableInvertedTexture, _collectableRect, nullptr, Vector2::Zero, 1.0f, 0.0f, Color::White, SpriteEffect::NONE);
-
 		
-	}
-	else
-	{
-		// Draw Blue Munchie
-		SpriteBatch::Draw(_collectableBlueTexture, _collectableRect, nullptr, Vector2::Zero, 1.0f, 0.0f, Color::White, SpriteEffect::NONE);
-		
-		
-
-		if (_frameCount >= 60)
-			_frameCount = 0;
-	}*/
-	
 	// Draws String
 	SpriteBatch::DrawString(stream.str().c_str(), _stringPosition, Color::Green);
 
@@ -179,7 +161,11 @@ void Pacman::Input(int elaspedTime, Input::KeyboardState* state, Input::MouseSta
 	Input::KeyboardState* keyboardState = Input::Keyboard::GetState();
 
 	float playerSpeed = _cSpeed * elaspedTime * _player->speedMultiplier;
-	
+	//viewport
+	int minViewportWidth = 0;
+	int maxViewportWidth = Graphics::GetViewportWidth();
+	int minViewportHeight = 0;
+	int maxViewportHeight = Graphics::GetViewportHeight();
 	
 	//Sprint
 	if (keyboardState->IsKeyDown(Input::Keys::LEFTSHIFT)) {
@@ -206,7 +192,12 @@ void Pacman::Input(int elaspedTime, Input::KeyboardState* state, Input::MouseSta
 	if (keyboardState->IsKeyDown(Input::Keys::S)) {
 		_player->_position->Y += playerSpeed;
 		_player->_direction = 1;
-	}	
+	}
+	//randomising the cherry
+	if (keyboardState->IsKeyDown(Input::Keys::R)) {
+		_collectable->_position->X = rand() % (maxViewportWidth + 1 - minViewportWidth) + minViewportWidth;
+		_collectable->_position->Y = rand() % (maxViewportHeight + 1 - minViewportHeight) + minViewportHeight;
+	}
 
 	//Mouse
 	if (mouseState->LeftButton == Input::ButtonState::PRESSED) {
