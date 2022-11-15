@@ -177,6 +177,8 @@ void Pacman::Draw(int elapsedTime)
 void Pacman::Input(int elaspedTime, Input::KeyboardState* state, Input::MouseState* mouseState) {
 
 	Input::KeyboardState* keyboardState = Input::Keyboard::GetState();
+
+	float playerSpeed = _cSpeed * elaspedTime * _player->speedMultiplier;
 	
 	
 	//Sprint
@@ -189,20 +191,20 @@ void Pacman::Input(int elaspedTime, Input::KeyboardState* state, Input::MouseSta
 
 	// Keyboard
 	if (keyboardState->IsKeyDown(Input::Keys::D)) {
-		_player->_position->X += _cSpeed * elaspedTime * _player->speedMultiplier; //Moves Pacman across X axis
+		_player->_position->X += playerSpeed; 
 		_player->_direction = 0;
 	}
 	if (keyboardState->IsKeyDown(Input::Keys::A)) {
-		_player->_position->X -= _cSpeed * elaspedTime * _player->speedMultiplier;
+		_player->_position->X -= playerSpeed;
 		_player->_direction = 2;
 	}
 
 	if (keyboardState->IsKeyDown(Input::Keys::W)) {
-		_player->_position->Y -= _cSpeed * elaspedTime * _player->speedMultiplier;
+		_player->_position->Y -= playerSpeed;
 		_player->_direction = 3;
 	}
 	if (keyboardState->IsKeyDown(Input::Keys::S)) {
-		_player->_position->Y += _cSpeed * elaspedTime * _player->speedMultiplier;
+		_player->_position->Y += playerSpeed;
 		_player->_direction = 1;
 	}	
 
