@@ -2,18 +2,25 @@
 
 #include <sstream>
 
-Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPlayerSpeed(0.1f), _cPlayerFrameTime(250), _cCollectableFrameTime(500)
+Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0.1f), _cFrameTime(250), _cCollectableFrameTime(500)
 {
-	
+		
+
+	_player = new Player();
+
+	_collectable = new Collectable();
+			
+
 	_paused = false;
 	_pKeyDown = false;
 	_start = true;
 
-	_playerFrame = 0;
-	_playerCurrentFrameTime = 0;
+	_player-> _frame = 0;
+	_player-> _currentFrameTime = 0;
+	_player->speedMultiplier = 1.0f;
 
-	_collectableFrame = 0;
-	_collectableCurrentFrameTime = 0;
+	_collectable-> _frame = 0;
+	_collectable-> _currentFrameTime = 0;
 	
 
 	//Initialise important Game aspects
@@ -25,12 +32,15 @@ Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPlayerSpeed(0.1f), 
 }
 
 Pacman::~Pacman()
-{
-	delete _playerTexture;
-	delete _playerSourceRect;
-	delete _collectableTexture;
+{	
+	delete _player-> _texture;
+	delete _player-> _sourceRect;
+	delete _player;
 	
-	delete _collectableRect;
+	delete _collectable-> _texture;	
+	delete _collectable-> _rect;
+	delete _collectable;
+
 	delete _menuBackground;
 	delete _menuRectangle;
 	delete _menuStringPosition;
@@ -42,16 +52,16 @@ Pacman::~Pacman()
 void Pacman::LoadContent()
 {
 	// Load Pacman
-	_playerTexture = new Texture2D();
-	_playerTexture->Load("Textures/Pacman.tga", false);
-	_playerPosition = new Vector2(350.0f, 350.0f);
-	_playerSourceRect = new Rect(0.0f, 0.0f, 32, 32);
+	_player-> _texture = new Texture2D();
+	_player-> _texture->Load("Textures/Pacman.tga", false);
+	_player-> _position = new Vector2(350.0f, 350.0f);
+	_player-> _sourceRect = new Rect(0.0f, 0.0f, 32, 32);
 
 	// Load Collectable
-	_collectableTexture = new Texture2D();
-	_collectableTexture->Load("Textures/CollectableTexture.png", false);
-	_collectablePosition = new Vector2(100.0f, 450.0f);
-	_collectableRect = new Rect(0.0f, 0.0f, 32, 32);
+	_collectable-> _texture = new Texture2D();
+	_collectable-> _texture->Load("Textures/CollectableTexture.png", false);
+	_collectable-> _position = new Vector2(100.0f, 450.0f);
+	_collectable-> _rect = new Rect(0.0f, 0.0f, 32, 32);
 
 	// Set string position
 	_stringPosition = new Vector2(10.0f, 25.0f);
@@ -79,6 +89,7 @@ void Pacman::Update(int elapsedTime)
 {
 	// Gets the current state of the keyboard
 	Input::KeyboardState* keyboardState = Input::Keyboard::GetState();
+	Input::MouseState* mouseState = Input::Mouse::GetState();
 
 	if (keyboardState->IsKeyDown(Input::Keys::SPACE)) {
 		_start = false;
@@ -97,133 +108,13 @@ void Pacman::Update(int elapsedTime)
 		}
 		if (!_paused) {
 
-			// Checks if D key is pressed
-			if (keyboardState->IsKeyDown(Input::Keys::D)) {
-				_playerPosition->X += _cPlayerSpeed * elapsedTime; //Moves Pacman across X axis
-				_playerDirection = 0;
-			}
-			if (keyboardState->IsKeyDown(Input::Keys::A)){
-				_playerPosition->X -= _cPlayerSpeed * elapsedTime;
-			_playerDirection = 2;
-		}
-				
-			if (keyboardState->IsKeyDown(Input::Keys::W)) {
-				_playerPosition->Y -= _cPlayerSpeed * elapsedTime;
-				_playerDirection = 3;
-			}
-			if (keyboardState->IsKeyDown(Input::Keys::S)) {
-				_playerPosition->Y += _cPlayerSpeed * elapsedTime;
-				_playerDirection = 1;
-			}
+			Input(elapsedTime, keyboardState, mouseState);
 
+			updatingPlayer(elapsedTime);
 
+			updatingCollectable(elapsedTime);		
 
-
-			//animating the player
-
-			_playerCurrentFrameTime += elapsedTime;
-
-			if (_playerCurrentFrameTime > _cPlayerFrameTime) {
-
-				_playerFrame++;
-
-				if (_playerFrame >= 2) {
-					_playerFrame = 0;
-				}
-
-				_playerCurrentFrameTime = 0;
-			}
-
-
-			//animating the collectable
-
-			_collectableCurrentFrameTime += elapsedTime;
-
-			if (_collectableCurrentFrameTime > _cCollectableFrameTime) {
-				_collectableFrame++;
-
-				if (_collectableFrame >= 2) {
-					_collectableFrame = 0;
-				}
-
-				_collectableCurrentFrameTime = 0;
-
-			}
-
-			//changing the direction of the player
-
-			_playerSourceRect->Y = _playerSourceRect->Height * _playerDirection;
-			_playerSourceRect->X = _playerSourceRect->Width * _playerFrame;
-
-			//Changing the colectable sheet
-
-			_collectableRect->X = _collectableRect->Width * _collectableFrame;
-
-
-
-
-			/*switch (_playerDirection) {
-			case 1: //right
-				//_playerSourceRect = new Rect(0.0f, 0.0f, 32, 32);
-				_playerSourceRect->Y = 0.0f;
-				break;
-			case 2: //left
-				//_playerSourceRect = new Rect(0.0f,64.0f, 32, 32);
-				_playerSourceRect->Y = 64.0f;
-				break;
-			case 3://up
-				//_playerSourceRect = new Rect(0.0f, 96.0f, 32, 32);
-				_playerSourceRect->Y = 96.0f;
-				break;
-			case 4://down
-				//_playerSourceRect = new Rect(0.0f, 32.0f, 32, 32);
-				_playerSourceRect->Y = 32.0f;
-				break;
-			}*/
-	//Pause
-	
-
-	/*
-	//Coliding with walls
-	//right
-	if (_pacmanPosition->X + _pacmanSourceRect->Width > 1024) {
-		_pacmanPosition->X = 1024 - _pacmanSourceRect->Width;
-	}
-	//left
-	if (_pacmanPosition->X < 0) {
-		_pacmanPosition->X = 0;
-	}
-	//up
-	if (_pacmanPosition->Y < 0) {
-		_pacmanPosition->Y = 0;
-	}
-	//down
-	if (_pacmanPosition->Y + _pacmanSourceRect->Height > 768) {
-		_pacmanPosition->Y = 768 - _pacmanSourceRect->Height;
-	}
-*/
-
-
-
-	//Getting pacman to wrap around the screen
-	//right
-			if (_playerPosition->X + _playerSourceRect->Width > Graphics::GetViewportWidth()) {
-				_playerPosition->X = 0 * Graphics::GetViewportWidth();
-			}
-	//left
-			if (_playerPosition->X < 0 * Graphics::GetViewportWidth()) {
-				_playerPosition->X = Graphics::GetViewportWidth() - _playerSourceRect->Width;
-			}
-	//up
-			if (_playerPosition->Y < 0 * Graphics::GetViewportHeight()) {
-				_playerPosition->Y = Graphics::GetViewportHeight() - _playerSourceRect->Height;
-				}
-	//down
-			if (_playerPosition->Y + _playerSourceRect->Height > Graphics::GetViewportHeight()) {
-				_playerPosition->Y = 0 * Graphics::GetViewportHeight();
-			}
-			//_frameCount++;
-	
+		
 		}
 	}
 }
@@ -232,13 +123,13 @@ void Pacman::Draw(int elapsedTime)
 {
 	// Allows us to easily create a string
 	std::stringstream stream;
-	stream << "Player X: " << _playerPosition->X << " Y: " << _playerPosition->Y;
+	stream << "Player X: " << _player-> _position->X << " Y: " << _player-> _position->Y;
 
 	SpriteBatch::BeginDraw(); // Starts Drawing
-	SpriteBatch::Draw(_playerTexture, _playerPosition, _playerSourceRect); // Draws Pacman
+	SpriteBatch::Draw(_player-> _texture, _player-> _position, _player-> _sourceRect); // Draws Pacman
 
 
-	SpriteBatch::Draw(_collectableTexture, _collectablePosition, _collectableRect); //Draw Collectable
+	SpriteBatch::Draw(_collectable-> _texture, _collectable-> _position, _collectable-> _rect); //Draw Collectable
 
 
 
@@ -280,4 +171,102 @@ void Pacman::Draw(int elapsedTime)
 	}
 
 	SpriteBatch::EndDraw(); // Ends Drawing
+}
+
+
+void Pacman::Input(int elaspedTime, Input::KeyboardState* state, Input::MouseState* mouseState) {
+
+	Input::KeyboardState* keyboardState = Input::Keyboard::GetState();
+	
+	
+	//Sprint
+	if (keyboardState->IsKeyDown(Input::Keys::LEFTSHIFT)) {
+		_player->speedMultiplier = 5.0f;
+	}
+	else {
+		_player->speedMultiplier = 1.0f;
+	}
+
+	// Keyboard
+	if (keyboardState->IsKeyDown(Input::Keys::D)) {
+		_player->_position->X += _cSpeed * elaspedTime * _player->speedMultiplier; //Moves Pacman across X axis
+		_player->_direction = 0;
+	}
+	if (keyboardState->IsKeyDown(Input::Keys::A)) {
+		_player->_position->X -= _cSpeed * elaspedTime * _player->speedMultiplier;
+		_player->_direction = 2;
+	}
+
+	if (keyboardState->IsKeyDown(Input::Keys::W)) {
+		_player->_position->Y -= _cSpeed * elaspedTime * _player->speedMultiplier;
+		_player->_direction = 3;
+	}
+	if (keyboardState->IsKeyDown(Input::Keys::S)) {
+		_player->_position->Y += _cSpeed * elaspedTime * _player->speedMultiplier;
+		_player->_direction = 1;
+	}	
+
+	//Mouse
+	if (mouseState->LeftButton == Input::ButtonState::PRESSED) {
+		_collectable->_position->X = mouseState->X;
+		_collectable->_position->Y = mouseState->Y;
+	}
+}
+
+void Pacman::updatingPlayer(int elapsedTime) {
+	_player->_currentFrameTime += elapsedTime;
+
+	if (_player->_currentFrameTime > _cFrameTime) {
+
+		_player->_frame++;
+
+		if (_player->_frame >= 2) {
+			_player->_frame = 0;
+		}
+
+		_player->_currentFrameTime = 0;
+	}
+
+	//crossing offscreen
+	if (_player->_position->X + _player->_sourceRect->Width > Graphics::GetViewportWidth()) {
+		_player->_position->X = 0 * Graphics::GetViewportWidth();
+	}
+	//left
+	if (_player->_position->X < 0 * Graphics::GetViewportWidth()) {
+		_player->_position->X = Graphics::GetViewportWidth() - _player->_sourceRect->Width;
+	}
+	//up
+	if (_player->_position->Y < 0 * Graphics::GetViewportHeight()) {
+		_player->_position->Y = Graphics::GetViewportHeight() - _player->_sourceRect->Height;
+	}
+	//down
+	if (_player->_position->Y + _player->_sourceRect->Height > Graphics::GetViewportHeight()) {
+		_player->_position->Y = 0 * Graphics::GetViewportHeight();
+	}
+
+	//changing the direction of the player
+
+	_player->_sourceRect->Y = _player->_sourceRect->Height * _player->_direction;
+	_player->_sourceRect->X = _player->_sourceRect->Width * _player->_frame;
+}
+
+void Pacman::updatingCollectable(int elapsedTime) {
+	//animating the collectable
+
+	_collectable->_currentFrameTime += elapsedTime;
+
+	if (_collectable->_currentFrameTime > _cCollectableFrameTime) {
+		_collectable->_frame++;
+
+		if (_collectable->_frame >= 2) {
+			_collectable->_frame = 0;
+		}
+
+		_collectable->_currentFrameTime = 0;
+
+	}
+
+	//Changing the colectable sheet
+
+	_collectable->_rect->X = _collectable->_rect->Width * _collectable->_frame;
 }
