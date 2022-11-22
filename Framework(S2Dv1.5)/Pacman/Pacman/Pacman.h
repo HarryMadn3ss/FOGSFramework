@@ -11,6 +11,8 @@
 // Just need to include main header file
 #include "S2D/S2D.h"
 
+#define COLLECTABLECOUNT 50
+
 // Reduces the amount of typing by including all classes in S2D namespace
 using namespace S2D;
 
@@ -52,7 +54,7 @@ class Pacman : public Game  //rename once i have a game title
 private:
 	
 	Player* _player;
-	Collectable* _collectable;
+	Collectable* _collectable[COLLECTABLECOUNT];
 
 
 	const float _cSpeed;

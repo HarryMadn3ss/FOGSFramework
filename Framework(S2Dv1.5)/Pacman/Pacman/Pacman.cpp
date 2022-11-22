@@ -5,10 +5,15 @@
 Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0.1f), _cFrameTime(250), _cCollectableFrameTime(500)
 {
 		
+	for (int i = 0; i < COLLECTABLECOUNT; i++) {
+		_collectable[i] = new Collectable();
+		_collectable[i]->_frame = 0;
+		_collectable[i]->_currentFrameTime = 0;
+	}
 
 	_player = new Player();
 
-	_collectable = new Collectable();
+	
 			
 
 	_paused = false;
@@ -19,8 +24,8 @@ Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0.1f), _cFram
 	_player-> _currentFrameTime = 0;
 	_player->speedMultiplier = 1.0f;
 
-	_collectable-> _frame = 0;
-	_collectable-> _currentFrameTime = 0;
+	
+	
 	
 
 	//Initialise important Game aspects
@@ -37,8 +42,11 @@ Pacman::~Pacman()
 	delete _player-> _sourceRect;
 	delete _player;
 	
-	delete _collectable-> _texture;	
-	delete _collectable-> _rect;
+	for (int i = 0; i < COLLECTABLECOUNT; i++) {
+		delete _collectable[i]->_texture;
+		delete _collectable[i]->_rect;
+	}
+	
 	delete _collectable;
 
 	delete _menuBackground;
@@ -58,10 +66,13 @@ void Pacman::LoadContent()
 	_player-> _sourceRect = new Rect(0.0f, 0.0f, 32, 32);
 
 	// Load Collectable
-	_collectable-> _texture = new Texture2D();
-	_collectable-> _texture->Load("Textures/CollectableTexture.png", false);
-	_collectable-> _position = new Vector2(100.0f, 450.0f);
-	_collectable-> _rect = new Rect(0.0f, 0.0f, 32, 32);
+	for (int i = 0; i < COLLECTABLECOUNT; i++) {
+		_collectable[i]->_texture = new Texture2D();
+		_collectable[i]->_texture->Load("Textures/CollectableTexture.png", false);
+		_collectable[i]->_position = new Vector2(100.0f, 450.0f);
+		_collectable[i]->_rect = new Rect(0.0f, 0.0f, 32, 32);
+	}
+	
 
 	// Set string position
 	_stringPosition = new Vector2(10.0f, 25.0f);
@@ -128,9 +139,9 @@ void Pacman::Draw(int elapsedTime)
 	SpriteBatch::BeginDraw(); // Starts Drawing
 	SpriteBatch::Draw(_player-> _texture, _player-> _position, _player-> _sourceRect); // Draws Pacman
 
-
-	SpriteBatch::Draw(_collectable-> _texture, _collectable-> _position, _collectable-> _rect); //Draw Collectable
-
+	for (int i = 0; i < COLLECTABLECOUNT; i++) {
+		SpriteBatch::Draw(_collectable[i]->_texture, _collectable[i]->_position, _collectable[i]->_rect); //Draw Collectable
+	}
 
 
 	/*if (_frameCount < 30)
@@ -208,8 +219,9 @@ void Pacman::Input(int elaspedTime, Input::KeyboardState* state, Input::MouseSta
 
 	//Mouse
 	if (mouseState->LeftButton == Input::ButtonState::PRESSED) {
-		_collectable->_position->X = mouseState->X;
-		_collectable->_position->Y = mouseState->Y;
+		//change to attack
+		/*_collectable->_position->X = mouseState->X;    
+		_collectable->_position->Y = mouseState->Y;*/
 	}
 }
 
@@ -253,20 +265,24 @@ void Pacman::updatingPlayer(int elapsedTime) {
 void Pacman::updatingCollectable(int elapsedTime) {
 	//animating the collectable
 
-	_collectable->_currentFrameTime += elapsedTime;
+	for (int i = 0; i < COLLECTABLECOUNT; i++) {
 
-	if (_collectable->_currentFrameTime > _cCollectableFrameTime) {
-		_collectable->_frame++;
+	
+	_collectable[i]->_currentFrameTime += elapsedTime;
 
-		if (_collectable->_frame >= 2) {
-			_collectable->_frame = 0;
+	if (_collectable[i]->_currentFrameTime > _cCollectableFrameTime) {
+		_collectable[i]->_frame++;
+
+		if (_collectable[i]->_frame >= 2) {
+			_collectable[i]->_frame = 0;
 		}
 
-		_collectable->_currentFrameTime = 0;
+		_collectable[i]->_currentFrameTime = 0;
 
 	}
 
 	//Changing the colectable sheet
 
-	_collectable->_rect->X = _collectable->_rect->Width * _collectable->_frame;
+	_collectable[i]->_rect->X = _collectable[i]->_rect->Width * _collectable[i]->_frame;
+	}
 }
