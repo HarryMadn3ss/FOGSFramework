@@ -65,11 +65,17 @@ void Pacman::LoadContent()
 	_player-> _position = new Vector2(350.0f, 350.0f);
 	_player-> _sourceRect = new Rect(0.0f, 0.0f, 32, 32);
 
+
+	//seeding rand
+	srand(time(NULL));
 	// Load Collectable
+	Texture2D* collectableTex = new Texture2D();
+	collectableTex->Load("Textures/CollectableTexture.png", false);
+
 	for (int i = 0; i < COLLECTABLECOUNT; i++) {
 		_collectable[i]->_texture = new Texture2D();
-		_collectable[i]->_texture->Load("Textures/CollectableTexture.png", false);
-		_collectable[i]->_position = new Vector2(100.0f, 450.0f);
+		_collectable[i]->_texture = collectableTex;
+		_collectable[i]->_position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
 		_collectable[i]->_rect = new Rect(0.0f, 0.0f, 32, 32);
 	}
 	
