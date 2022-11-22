@@ -4,7 +4,7 @@
 
 Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0.1f), _cFrameTime(250), _cCollectableFrameTime(500)
 {
-		
+			
 	for (int i = 0; i < COLLECTABLECOUNT; i++) {
 		_collectable[i] = new Collectable();
 		_collectable[i]->_frame = 0;
@@ -12,9 +12,11 @@ Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0.1f), _cFram
 	}
 
 	_player = new Player();
+	_player->dead = false;		
 
-	
-			
+	_ghost[0] = new SimpleEnemy();
+	_ghost[0]->direction = 0;
+	_ghost[0]->speed = 0.2f;
 
 	_paused = false;
 	_pKeyDown = false;
@@ -23,11 +25,7 @@ Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0.1f), _cFram
 	_player-> _frame = 0;
 	_player-> _currentFrameTime = 0;
 	_player->speedMultiplier = 1.0f;
-
 	
-	
-	
-
 	//Initialise important Game aspects
 	Graphics::Initialise(argc, argv, this, 1024, 768, false, 25, 25, "Pacman", 60);
 	Input::Initialise();
@@ -45,9 +43,16 @@ Pacman::~Pacman()
 	for (int i = 0; i < COLLECTABLECOUNT; i++) {
 		delete _collectable[i]->_texture;
 		delete _collectable[i]->_rect;
-	}
-	
-	delete _collectable;
+		delete _collectable[i]->_position;
+		delete _collectable[i];
+	}	
+
+	for (int i = 0; i < SIMPLEENEMYCOUNT; i++) {
+		delete _ghost[i]->Texture;
+		delete _ghost[i]->sourceRect;
+		delete _ghost[i]->position;
+		delete _ghost[i];
+	}	
 
 	delete _menuBackground;
 	delete _menuRectangle;
@@ -59,15 +64,22 @@ Pacman::~Pacman()
 
 void Pacman::LoadContent()
 {
+	//seeding rand
+	srand(time(NULL));
+	
 	// Load Pacman
 	_player-> _texture = new Texture2D();
 	_player-> _texture->Load("Textures/Pacman.tga", false);
 	_player-> _position = new Vector2(350.0f, 350.0f);
 	_player-> _sourceRect = new Rect(0.0f, 0.0f, 32, 32);
 
+	//load ghost
+	_ghost[0]->Texture = new Texture2D();
+	_ghost[0]->Texture->Load("Textures / GhostBlue.png", false);
+	_ghost[0]->position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
+	_ghost[0]->sourceRect = new Rect(0.0f, 0.0f, 20, 20);
 
-	//seeding rand
-	srand(time(NULL));
+	
 	// Load Collectable
 	Texture2D* collectableTex = new Texture2D();
 	collectableTex->Load("Textures/CollectableTexture.png", false);
@@ -129,44 +141,35 @@ void Pacman::Update(int elapsedTime)
 
 			updatingPlayer(elapsedTime);
 
-			updatingCollectable(elapsedTime);		
+			updatingCollectable(elapsedTime);
 
-		
+			updateSimpleEnemy(_ghost[0], elapsedTime);
+
 		}
 	}
 }
 
 void Pacman::Draw(int elapsedTime)
 {
-	// Allows us to easily create a string
+	// player coords
 	std::stringstream stream;
 	stream << "Player X: " << _player-> _position->X << " Y: " << _player-> _position->Y;
 
 	SpriteBatch::BeginDraw(); // Starts Drawing
-	SpriteBatch::Draw(_player-> _texture, _player-> _position, _player-> _sourceRect); // Draws Pacman
+
+	if(!_player->dead)
+	{
+		SpriteBatch::Draw(_player-> _texture, _player-> _position, _player-> _sourceRect); 
+	}
+	
 
 	for (int i = 0; i < COLLECTABLECOUNT; i++) {
 		SpriteBatch::Draw(_collectable[i]->_texture, _collectable[i]->_position, _collectable[i]->_rect); //Draw Collectable
 	}
 
-
-	/*if (_frameCount < 30)
-	{
-		// Draws Red Munchie
-		SpriteBatch::Draw(_collectableInvertedTexture, _collectableRect, nullptr, Vector2::Zero, 1.0f, 0.0f, Color::White, SpriteEffect::NONE);
-
-		
+	for (int i = 0; i < SIMPLEENEMYCOUNT; i++) {
+		SpriteBatch::Draw(_ghost[i]->Texture, _ghost[i]->position, _ghost[i]->sourceRect);
 	}
-	else
-	{
-		// Draw Blue Munchie
-		SpriteBatch::Draw(_collectableBlueTexture, _collectableRect, nullptr, Vector2::Zero, 1.0f, 0.0f, Color::White, SpriteEffect::NONE);
-		
-		
-
-		if (_frameCount >= 60)
-			_frameCount = 0;
-	}*/
 	
 	// Draws String
 	SpriteBatch::DrawString(stream.str().c_str(), _stringPosition, Color::Green);
@@ -290,5 +293,21 @@ void Pacman::updatingCollectable(int elapsedTime) {
 	//Changing the colectable sheet
 
 	_collectable[i]->_rect->X = _collectable[i]->_rect->Width * _collectable[i]->_frame;
+	}
+}
+
+void Pacman::updateSimpleEnemy(SimpleEnemy* ghost, int elapsedTime) {
+	if (ghost->direction == 0) {
+		ghost->position->X += ghost->speed * elapsedTime;
+	}
+	else if (ghost->direction == 1) {
+		ghost->position->X -= ghost->speed * elapsedTime;
+	}
+
+	if (ghost->position->X = ghost->sourceRect->Width >= Graphics::GetViewportWidth()) {
+		ghost->direction = 1;
+	}
+	else if (ghost->position->X <= 0) {
+		ghost->direction = 0;
 	}
 }

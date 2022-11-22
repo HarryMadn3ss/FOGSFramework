@@ -13,6 +13,8 @@
 
 #define COLLECTABLECOUNT 50
 
+#define SIMPLEENEMYCOUNT 1
+
 // Reduces the amount of typing by including all classes in S2D namespace
 using namespace S2D;
 
@@ -27,14 +29,12 @@ struct Player
 	int _frame;
 	int _currentFrameTime;
 	int _direction;
-
 	float speedMultiplier;
-
-	
+	bool dead;
 };
 
-struct Collectable {
-
+struct Collectable 
+{
 	Rect* _rect;
 	Texture2D* _texture;
 	Vector2* _position;
@@ -43,6 +43,15 @@ struct Collectable {
 	int _currentFrameTime;
 };
 
+struct SimpleEnemy 
+{
+	Vector2* position;
+	Texture2D* Texture;
+	Rect* sourceRect;
+
+	int direction;
+	float speed;
+};
 
 
 
@@ -55,7 +64,7 @@ private:
 	
 	Player* _player;
 	Collectable* _collectable[COLLECTABLECOUNT];
-
+	SimpleEnemy* _ghost[SIMPLEENEMYCOUNT];
 
 	const float _cSpeed;
 	const int _cFrameTime;	
@@ -79,6 +88,9 @@ private:
 	Vector2* _mainMenuStringPosition;
 	bool _start;
 
+	//void checkSimpleEnemyCollisions();
+	//void updateSimpleEnemy(SimpleEnemy*, int elaspedTime);
+
 
 public:
 	/// <summary> Constructs the Pacman class. </summary>
@@ -101,4 +113,8 @@ public:
 	void updatingPlayer(int elapsedTime);
 
 	void updatingCollectable(int elapsedTime);
+
+	void checkSimpleEnemyCollision();
+
+	void updateSimpleEnemy(SimpleEnemy*, int elaspedTime);
 };
