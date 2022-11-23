@@ -46,7 +46,7 @@ struct Collectable
 struct SimpleEnemy 
 {
 	Vector2* position;
-	Texture2D* Texture;
+	Texture2D* texture;
 	Rect* sourceRect;
 
 	int direction;
