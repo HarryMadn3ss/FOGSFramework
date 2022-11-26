@@ -31,6 +31,7 @@ struct Player
 	int _direction;
 	float speedMultiplier;
 	bool dead;
+	int score;
 };
 
 struct Collectable 
@@ -110,6 +111,8 @@ private:
 	void updatingPlayer(int elapsedTime);
 
 	void updatingCollectable(int elapsedTime);
+
+	void checkCollectableCollision();
 
 	void checkSimpleEnemyCollision();
 

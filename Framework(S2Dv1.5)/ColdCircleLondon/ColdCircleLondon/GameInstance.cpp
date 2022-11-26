@@ -1,6 +1,9 @@
 #include "GameInstance.h"
 
 #include <sstream>
+#include <iostream>
+
+using namespace std;
 
 GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0.1f), _cFrameTime(250), _cCollectableFrameTime(500)
 {
@@ -14,6 +17,7 @@ GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0
 
 	_player = new Player();
 	_player->dead = false;
+	_player->score = 0;
 
 	for (int i = 0; i < SIMPLEENEMYCOUNT; i++)
 	{
@@ -153,6 +157,7 @@ void GameInstance::Update(int elapsedTime)
 			updatingCollectable(elapsedTime);
 			updateSimpleEnemy(_ghost[0], elapsedTime);
 			checkSimpleEnemyCollision();
+			checkCollectableCollision();
 		}
 	}
 }
@@ -161,7 +166,7 @@ void GameInstance::Draw(int elapsedTime)
 {
 	// player coords
 	std::stringstream stream;
-	stream << "Player X: " << _player->_position->X << " Y: " << _player->_position->Y;
+	stream << "Player X: " << _player->_position->X << " Y: " << _player->_position->Y << " Player Score: " << _player->score;
 
 	SpriteBatch::BeginDraw(); // Starts Drawing
 
@@ -343,4 +348,28 @@ void GameInstance::checkSimpleEnemyCollision() {
 		}
 	}
 
+}
+
+void GameInstance::checkCollectableCollision() {
+	int playerTop = _player->_position->Y;
+	int playerRight = _player->_position->X + _player->_sourceRect->Width;
+	int playerBottom = _player->_position->Y + _player->_sourceRect->Height;
+	int playerLeft = _player->_position->X;
+
+	int collectableTop = 0;
+	int collectableRight = 0;
+	int collectableBottom = 0;
+	int collectableLeft = 0;
+
+	for (int i = 0; i < COLLECTABLECOUNT; i++) {
+		collectableTop = _collectable[i]->_position-> Y;
+		collectableRight = _collectable[i]->_position->X + _collectable[i]->_rect->Width;
+		collectableBottom = _collectable[i]->_position->Y + _collectable[i]->_rect->Height;
+		collectableLeft = _collectable[i]->_position->X;
+
+		if ((playerBottom > collectableTop) && (playerTop < collectableBottom) && (playerLeft < collectableRight) && (playerRight > collectableLeft)) {
+			_collectable[i]->_position->Y = 1000;
+			_player->score += 100;
+		}
+	}
 }
