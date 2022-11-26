@@ -79,9 +79,9 @@ void GameInstance::LoadContent()
 
 	// Load Pacman
 	_player->_texture = new Texture2D();
-	_player->_texture->Load("Textures/Pacman.tga", false);
+	_player->_texture->Load("Textures/player.png", false);
 	_player->_position = new Vector2(350.0f, 350.0f);
-	_player->_sourceRect = new Rect(0.0f, 0.0f, 32, 32);
+	_player->_sourceRect = new Rect(0.0f, 0.0f, 40, 40);
 
 	//load ghost
 	Texture2D* ghostTex = new Texture2D();
@@ -223,21 +223,29 @@ void GameInstance::Input(int elaspedTime, Input::KeyboardState* state, Input::Mo
 	// Keyboard
 	if (keyboardState->IsKeyDown(Input::Keys::D) || keyboardState->IsKeyDown(Input::Keys::RIGHT)) {
 		_player->_position->X += _cSpeed * elaspedTime * _player->speedMultiplier; //Moves Pacman across X axis
-		_player->_direction = 0;
-	}
-	if (keyboardState->IsKeyDown(Input::Keys::A) || keyboardState->IsKeyDown(Input::Keys::LEFT)) {
-		_player->_position->X -= _cSpeed * elaspedTime * _player->speedMultiplier;
-		_player->_direction = 2;
-	}
-
-	if (keyboardState->IsKeyDown(Input::Keys::W) || keyboardState->IsKeyDown(Input::Keys::UP)) {
-		_player->_position->Y -= _cSpeed * elaspedTime * _player->speedMultiplier;
-		_player->_direction = 3;
-	}
-	if (keyboardState->IsKeyDown(Input::Keys::S) || keyboardState->IsKeyDown(Input::Keys::DOWN)) {
-		_player->_position->Y += _cSpeed * elaspedTime * _player->speedMultiplier;
 		_player->_direction = 1;
+		_player->isMoving = true;
 	}
+	else if (keyboardState->IsKeyDown(Input::Keys::A) || keyboardState->IsKeyDown(Input::Keys::LEFT)) {
+		_player->_position->X -= _cSpeed * elaspedTime * _player->speedMultiplier;
+		_player->_direction = 3;
+		_player->isMoving = true;
+	}
+	else if (keyboardState->IsKeyDown(Input::Keys::W) || keyboardState->IsKeyDown(Input::Keys::UP)) {
+		_player->_position->Y -= _cSpeed * elaspedTime * _player->speedMultiplier;
+		_player->_direction = 2;
+		_player->isMoving = true;
+	}
+	else if (keyboardState->IsKeyDown(Input::Keys::S) || keyboardState->IsKeyDown(Input::Keys::DOWN)) {
+		_player->_position->Y += _cSpeed * elaspedTime * _player->speedMultiplier;
+		_player->_direction = 0;
+		_player->isMoving = true;
+	}
+	else {
+		_player->isMoving = false;
+	}
+		
+	
 
 	//Mouse
 	if (mouseState->LeftButton == Input::ButtonState::PRESSED) {
@@ -279,9 +287,11 @@ void GameInstance::updatingPlayer(int elapsedTime) {
 	}
 
 	//changing the direction of the player
-
-	_player->_sourceRect->Y = _player->_sourceRect->Height * _player->_direction;
-	_player->_sourceRect->X = _player->_sourceRect->Width * _player->_frame;
+	if (_player->isMoving) {
+		_player->_sourceRect->X = _player->_sourceRect->Height * _player->_direction;
+		_player->_sourceRect->Y = _player->_sourceRect->Width * _player->_frame;
+	}
+	
 }
 
 void GameInstance::updatingCollectable(int elapsedTime) {

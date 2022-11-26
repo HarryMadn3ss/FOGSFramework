@@ -30,8 +30,10 @@ struct Player
 	int _currentFrameTime;
 	int _direction;
 	float speedMultiplier;
-	bool dead;
 	int score;
+	bool dead;
+	bool isMoving;
+	
 };
 
 struct Collectable 
