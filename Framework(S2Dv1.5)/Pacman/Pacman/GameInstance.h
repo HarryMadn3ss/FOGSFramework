@@ -58,7 +58,7 @@ struct SimpleEnemy
 // Declares the Pacman class which inherits from the Game class.
 // This allows us to overload the Game class methods to help us
 // load content, draw and update our game.
-class Pacman : public Game  //rename once i have a game title
+class GameInstance : public Game  //rename once i have a game title
 {
 private:
 	
@@ -67,10 +67,9 @@ private:
 	SimpleEnemy* _ghost[SIMPLEENEMYCOUNT];
 
 	const float _cSpeed;
-	const int _cFrameTime;	
+	const int _cFrameTime;
 
 	const int _cCollectableFrameTime;
-
 
 	// Position for String
 	Vector2* _stringPosition;
@@ -87,17 +86,15 @@ private:
 	Rect* _mainMenuRectangle;
 	Vector2* _mainMenuStringPosition;
 	bool _start;
-
-	//void checkSimpleEnemyCollisions();
-	//void updateSimpleEnemy(SimpleEnemy*, int elaspedTime);
+	
 
 
-public:
+	public:
 	/// <summary> Constructs the Pacman class. </summary>
-	Pacman(int argc, char* argv[]);
+	GameInstance(int argc, char* argv[]);
 
 	/// <summary> Destroys any data associated with Pacman class. </summary>
-	virtual ~Pacman();
+	virtual ~GameInstance();
 
 	/// <summary> All content should be loaded in this method. </summary>
 	void virtual LoadContent();

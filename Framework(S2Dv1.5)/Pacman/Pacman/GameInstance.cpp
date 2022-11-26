@@ -1,8 +1,8 @@
-#include "Pacman.h"
+#include "GameInstance.h"
 
 #include <sstream>
 
-Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0.1f), _cFrameTime(250), _cCollectableFrameTime(500)
+GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0.1f), _cFrameTime(250), _cCollectableFrameTime(500)
 {
 
 	for (int i = 0; i < COLLECTABLECOUNT; i++)
@@ -32,14 +32,14 @@ Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0.1f), _cFram
 	_player->speedMultiplier = 1.0f;
 
 	//Initialise important Game aspects
-	Graphics::Initialise(argc, argv, this, 1024, 768, false, 25, 25, "Pacman", 60);
+	Graphics::Initialise(argc, argv, this, 1024, 768, false, 25, 25, "Cold Circle London", 60);
 	Input::Initialise();
 
 	// Start the Game Loop - This calls Update and Draw in game loop
 	Graphics::StartGameLoop();
 }
 
-Pacman::~Pacman()
+GameInstance::~GameInstance()
 {
 	delete _player->_texture;
 	delete _player->_sourceRect;
@@ -68,7 +68,7 @@ Pacman::~Pacman()
 	delete _mainMenuStringPosition;
 }
 
-void Pacman::LoadContent()
+void GameInstance::LoadContent()
 {
 	//seeding rand
 	srand(time(NULL));
@@ -126,7 +126,7 @@ void Pacman::LoadContent()
 	_mainMenuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.0f, Graphics::GetViewportHeight() / 2.0f);
 }
 
-void Pacman::Update(int elapsedTime)
+void GameInstance::Update(int elapsedTime)
 {
 	// Gets the current state of the keyboard
 	Input::KeyboardState* keyboardState = Input::Keyboard::GetState();
@@ -148,20 +148,16 @@ void Pacman::Update(int elapsedTime)
 			_pKeyDown = false;
 		}
 		if (!_paused) {
-
 			Input(elapsedTime, keyboardState, mouseState);
-
 			updatingPlayer(elapsedTime);
-
 			updatingCollectable(elapsedTime);
-
 			updateSimpleEnemy(_ghost[0], elapsedTime);
-
+			checkSimpleEnemyCollision();
 		}
 	}
 }
 
-void Pacman::Draw(int elapsedTime)
+void GameInstance::Draw(int elapsedTime)
 {
 	// player coords
 	std::stringstream stream;
@@ -206,7 +202,7 @@ void Pacman::Draw(int elapsedTime)
 }
 
 
-void Pacman::Input(int elaspedTime, Input::KeyboardState* state, Input::MouseState* mouseState) {
+void GameInstance::Input(int elaspedTime, Input::KeyboardState* state, Input::MouseState* mouseState) {
 
 	Input::KeyboardState* keyboardState = Input::Keyboard::GetState();
 
@@ -220,20 +216,20 @@ void Pacman::Input(int elaspedTime, Input::KeyboardState* state, Input::MouseSta
 	}
 
 	// Keyboard
-	if (keyboardState->IsKeyDown(Input::Keys::D)) {
+	if (keyboardState->IsKeyDown(Input::Keys::D) || keyboardState->IsKeyDown(Input::Keys::RIGHT)) {
 		_player->_position->X += _cSpeed * elaspedTime * _player->speedMultiplier; //Moves Pacman across X axis
 		_player->_direction = 0;
 	}
-	if (keyboardState->IsKeyDown(Input::Keys::A)) {
+	if (keyboardState->IsKeyDown(Input::Keys::A) || keyboardState->IsKeyDown(Input::Keys::LEFT)) {
 		_player->_position->X -= _cSpeed * elaspedTime * _player->speedMultiplier;
 		_player->_direction = 2;
 	}
 
-	if (keyboardState->IsKeyDown(Input::Keys::W)) {
+	if (keyboardState->IsKeyDown(Input::Keys::W) || keyboardState->IsKeyDown(Input::Keys::UP)) {
 		_player->_position->Y -= _cSpeed * elaspedTime * _player->speedMultiplier;
 		_player->_direction = 3;
 	}
-	if (keyboardState->IsKeyDown(Input::Keys::S)) {
+	if (keyboardState->IsKeyDown(Input::Keys::S) || keyboardState->IsKeyDown(Input::Keys::DOWN)) {
 		_player->_position->Y += _cSpeed * elaspedTime * _player->speedMultiplier;
 		_player->_direction = 1;
 	}
@@ -246,7 +242,7 @@ void Pacman::Input(int elaspedTime, Input::KeyboardState* state, Input::MouseSta
 	}
 }
 
-void Pacman::updatingPlayer(int elapsedTime) {
+void GameInstance::updatingPlayer(int elapsedTime) {
 	_player->_currentFrameTime += elapsedTime;
 
 	if (_player->_currentFrameTime > _cFrameTime) {
@@ -283,7 +279,7 @@ void Pacman::updatingPlayer(int elapsedTime) {
 	_player->_sourceRect->X = _player->_sourceRect->Width * _player->_frame;
 }
 
-void Pacman::updatingCollectable(int elapsedTime) {
+void GameInstance::updatingCollectable(int elapsedTime) {
 	//animating the collectable
 
 	for (int i = 0; i < COLLECTABLECOUNT; i++) {
@@ -308,7 +304,7 @@ void Pacman::updatingCollectable(int elapsedTime) {
 	}
 }
 
-void Pacman::updateSimpleEnemy(SimpleEnemy* ghost, int elapsedTime) {
+void GameInstance::updateSimpleEnemy(SimpleEnemy* ghost, int elapsedTime) {
 	if (ghost->direction == 0) {
 		ghost->position->X += ghost->speed * elapsedTime;
 	}
@@ -322,4 +318,29 @@ void Pacman::updateSimpleEnemy(SimpleEnemy* ghost, int elapsedTime) {
 	else if (ghost->position->X <= 0) {
 		ghost->direction = 0;
 	}
+}
+
+void GameInstance::checkSimpleEnemyCollision() {
+	int playerTop = _player->_position->Y;
+	int playerRight = _player->_position->X + _player->_sourceRect->Width;
+	int playerBottom = _player->_position->Y + _player->_sourceRect->Height;
+	int playerLeft = _player->_position->X;
+
+	int enemyTop = 0;
+	int enemyRight = 0;
+	int enemyBottom = 0;
+	int enemyLeft = 0;
+
+	for (int i = 0; i < SIMPLEENEMYCOUNT; i++) {
+		enemyTop = _ghost[i]->position->Y;
+		enemyRight = _ghost[i]->position->X + _ghost[i]->sourceRect->Width;
+		enemyBottom = _ghost[i]->position->Y + _ghost[i]->sourceRect->Height;
+		enemyLeft = _ghost[i]->position->X;
+
+		if ((playerBottom > enemyTop) && (playerTop < enemyBottom) && (playerLeft < enemyRight) && (playerRight > enemyLeft)) {
+			_player->dead = true;
+			i = SIMPLEENEMYCOUNT;			
+		}
+	}
+
 }
