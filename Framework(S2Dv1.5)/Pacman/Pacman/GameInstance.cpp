@@ -18,6 +18,8 @@ GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0
 	_player = new Player();
 	_player->dead = false;
 	_player->score = 0;
+	_player->health = 3;
+	_player->invincible = false;
 
 	for (int i = 0; i < SIMPLEENEMYCOUNT; i++)
 	{
@@ -77,7 +79,7 @@ void GameInstance::LoadContent()
 	//seeding rand
 	srand(time(NULL));
 
-	// Load Pacman
+	// Load Player
 	_player->_texture = new Texture2D();
 	_player->_texture->Load("Textures/player.png", false);
 	_player->_position = new Vector2(350.0f, 350.0f);
@@ -98,7 +100,7 @@ void GameInstance::LoadContent()
 
 	// Load Collectable
 	Texture2D* collectableTex = new Texture2D();
-	collectableTex->Load("Textures/CollectableTexture.png", false);
+	collectableTex->Load("Textures/Coin.png", false);
 
 	for (int i = 0; i < COLLECTABLECOUNT; i++)
 	{
@@ -152,7 +154,9 @@ void GameInstance::Update(int elapsedTime)
 			_pKeyDown = false;
 		}
 		if (!_paused) {
-			Input(elapsedTime, keyboardState, mouseState);
+			if (!_player->dead) {
+				Input(elapsedTime, keyboardState, mouseState);
+			}			
 			updatingPlayer(elapsedTime);
 			updatingCollectable(elapsedTime);
 			updateSimpleEnemy(_ghost[0], elapsedTime);
@@ -166,14 +170,13 @@ void GameInstance::Draw(int elapsedTime)
 {
 	// player coords
 	std::stringstream stream;
-	stream << "Player X: " << _player->_position->X << " Y: " << _player->_position->Y << " Player Score: " << _player->score;
+	stream << "Player X: " << _player->_position->X << " Y: " << _player->_position->Y << " Player Score: " << _player->score << " Player Health: " << _player->health;
 
 	SpriteBatch::BeginDraw(); // Starts Drawing
 
-	if (!_player->dead)
-	{
-		SpriteBatch::Draw(_player->_texture, _player->_position, _player->_sourceRect);
-	}
+	
+	SpriteBatch::Draw(_player->_texture, _player->_position, _player->_sourceRect);
+	
 
 
 	for (int i = 0; i < COLLECTABLECOUNT; i++) {
@@ -221,27 +224,27 @@ void GameInstance::Input(int elaspedTime, Input::KeyboardState* state, Input::Mo
 	}
 
 	// Keyboard
+	if (keyboardState->IsKeyDown(Input::Keys::W) || keyboardState->IsKeyDown(Input::Keys::UP)) {
+		_player->_position->Y -= _cSpeed * elaspedTime * _player->speedMultiplier;
+		_player->_direction = 2;
+		_player->isMoving = true;
+	}	
+	if (keyboardState->IsKeyDown(Input::Keys::A) || keyboardState->IsKeyDown(Input::Keys::LEFT)) {
+		_player->_position->X -= _cSpeed * elaspedTime * _player->speedMultiplier;
+		_player->_direction = 3;
+		_player->isMoving = true;
+	}	
+	if (keyboardState->IsKeyDown(Input::Keys::S) || keyboardState->IsKeyDown(Input::Keys::DOWN)) {
+		_player->_position->Y += _cSpeed * elaspedTime * _player->speedMultiplier;
+		_player->_direction = 0;
+		_player->isMoving = true;
+	}
 	if (keyboardState->IsKeyDown(Input::Keys::D) || keyboardState->IsKeyDown(Input::Keys::RIGHT)) {
 		_player->_position->X += _cSpeed * elaspedTime * _player->speedMultiplier; //Moves Pacman across X axis
 		_player->_direction = 1;
 		_player->isMoving = true;
 	}
-	else if (keyboardState->IsKeyDown(Input::Keys::A) || keyboardState->IsKeyDown(Input::Keys::LEFT)) {
-		_player->_position->X -= _cSpeed * elaspedTime * _player->speedMultiplier;
-		_player->_direction = 3;
-		_player->isMoving = true;
-	}
-	else if (keyboardState->IsKeyDown(Input::Keys::W) || keyboardState->IsKeyDown(Input::Keys::UP)) {
-		_player->_position->Y -= _cSpeed * elaspedTime * _player->speedMultiplier;
-		_player->_direction = 2;
-		_player->isMoving = true;
-	}
-	else if (keyboardState->IsKeyDown(Input::Keys::S) || keyboardState->IsKeyDown(Input::Keys::DOWN)) {
-		_player->_position->Y += _cSpeed * elaspedTime * _player->speedMultiplier;
-		_player->_direction = 0;
-		_player->isMoving = true;
-	}
-	else {
+	if (!keyboardState->IsKeyDown(Input::Keys::W) && !keyboardState->IsKeyDown(Input::Keys::UP) && !keyboardState->IsKeyDown(Input::Keys::A) && !keyboardState->IsKeyDown(Input::Keys::LEFT) && !keyboardState->IsKeyDown(Input::Keys::S) && !keyboardState->IsKeyDown(Input::Keys::DOWN) && !keyboardState->IsKeyDown(Input::Keys::D) && !keyboardState->IsKeyDown(Input::Keys::RIGHT)) {
 		_player->isMoving = false;
 	}
 		
@@ -257,17 +260,43 @@ void GameInstance::Input(int elaspedTime, Input::KeyboardState* state, Input::Mo
 
 void GameInstance::updatingPlayer(int elapsedTime) {
 	_player->_currentFrameTime += elapsedTime;
+	
+	if (!_player->invincible) {
+		if (_player->_currentFrameTime > _cFrameTime) {
 
-	if (_player->_currentFrameTime > _cFrameTime) {
+			_player->_frame++;
 
-		_player->_frame++;
+			if (_player->_frame >= 2) {
+				_player->_frame = 0;
+			}
 
-		if (_player->_frame >= 2) {
-			_player->_frame = 0;
+			_player->_currentFrameTime = 0;
 		}
-
-		_player->_currentFrameTime = 0;
 	}
+	else if(_player->invincible)
+	{
+		if (_player->_currentFrameTime > _cFrameTime) {
+			
+
+			_player->_frame += 4;
+
+			if (_player->_frame > 4)
+			{
+				_player->_frame = 0;
+			}
+
+			_player->_currentFrameTime = 0.0f;
+			_player->_iCurrentFrameTime += 0.5;
+			if (_player->_iCurrentFrameTime >= 3.5f) {
+				_player->invincible = false;
+				_player->_iCurrentFrameTime = false;
+			}
+		}
+	}
+	else if (_player->dead) {
+		_player->_frame = 5;
+	}
+	
 
 	//crossing offscreen
 	if (_player->_position->X + _player->_sourceRect->Width > Graphics::GetViewportWidth()) {
@@ -287,9 +316,13 @@ void GameInstance::updatingPlayer(int elapsedTime) {
 	}
 
 	//changing the direction of the player
-	if (_player->isMoving) {
+	if (_player->isMoving || _player->invincible) {
 		_player->_sourceRect->X = _player->_sourceRect->Height * _player->_direction;
 		_player->_sourceRect->Y = _player->_sourceRect->Width * _player->_frame;
+	}
+	if (_player->dead) {
+		_player->_sourceRect->X = _player->_sourceRect->Height * _player->_direction;
+		_player->_sourceRect->Y = _player->_sourceRect->Width * 5;
 	}
 	
 }
@@ -305,7 +338,7 @@ void GameInstance::updatingCollectable(int elapsedTime) {
 		if (_collectable[i]->_currentFrameTime > _cCollectableFrameTime) {
 			_collectable[i]->_frame++;
 
-			if (_collectable[i]->_frame >= 2) {
+			if (_collectable[i]->_frame >= 6) {
 				_collectable[i]->_frame = 0;
 			}
 
@@ -346,17 +379,22 @@ void GameInstance::checkSimpleEnemyCollision() {
 	int enemyBottom = 0;
 	int enemyLeft = 0;
 
-	for (int i = 0; i < SIMPLEENEMYCOUNT; i++) {
-		enemyTop = _ghost[i]->position->Y;
-		enemyRight = _ghost[i]->position->X + _ghost[i]->sourceRect->Width;
-		enemyBottom = _ghost[i]->position->Y + _ghost[i]->sourceRect->Height;
-		enemyLeft = _ghost[i]->position->X;
+	if (!_player->invincible) {
+		for (int i = 0; i < SIMPLEENEMYCOUNT; i++) {
+			enemyTop = _ghost[i]->position->Y;
+			enemyRight = _ghost[i]->position->X + _ghost[i]->sourceRect->Width;
+			enemyBottom = _ghost[i]->position->Y + _ghost[i]->sourceRect->Height;
+			enemyLeft = _ghost[i]->position->X;
 
-		if ((playerBottom > enemyTop) && (playerTop < enemyBottom) && (playerLeft < enemyRight) && (playerRight > enemyLeft)) {
-			_player->dead = true;
-			i = SIMPLEENEMYCOUNT;			
+			if ((playerBottom > enemyTop) && (playerTop < enemyBottom) && (playerLeft < enemyRight) && (playerRight > enemyLeft)) {
+				_player->health -= 1;
+				checkPlayerDead();
+				i = SIMPLEENEMYCOUNT;
+				_player->invincible = true;
+			}
 		}
 	}
+	
 
 }
 
@@ -382,4 +420,14 @@ void GameInstance::checkCollectableCollision() {
 			_player->score += 100;
 		}
 	}
+}
+
+void GameInstance::checkPlayerDead() {
+	if (_player->health < 1) {
+		_player->dead = true;
+		if (_player->health < 0) {
+			_player->health = 0;
+		}
+	}
+	
 }

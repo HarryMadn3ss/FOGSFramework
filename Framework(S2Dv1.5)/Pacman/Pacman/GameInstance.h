@@ -29,10 +29,14 @@ struct Player
 	int _frame;
 	int _currentFrameTime;
 	int _direction;
+	int _iFrame;
+	float _iCurrentFrameTime;
 	float speedMultiplier;
 	int score;
+	int health;
 	bool dead;
 	bool isMoving;
+	bool invincible;
 	
 };
 
@@ -119,4 +123,6 @@ private:
 	void checkSimpleEnemyCollision();
 
 	void updateSimpleEnemy(SimpleEnemy*, int elaspedTime);
+
+	void checkPlayerDead();
 };
