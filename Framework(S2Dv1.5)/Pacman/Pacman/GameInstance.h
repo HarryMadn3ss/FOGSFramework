@@ -36,6 +36,7 @@ struct Player
 	int health;
 	bool dead;
 	bool isMoving;
+	bool isFiring;
 	bool invincible;
 	
 };

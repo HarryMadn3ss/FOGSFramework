@@ -224,31 +224,49 @@ void GameInstance::Input(int elaspedTime, Input::KeyboardState* state, Input::Mo
 	}
 
 	// Keyboard
-	if (keyboardState->IsKeyDown(Input::Keys::W) || keyboardState->IsKeyDown(Input::Keys::UP)) {
+	if (keyboardState->IsKeyDown(Input::Keys::W)) {
 		_player->_position->Y -= _cSpeed * elaspedTime * _player->speedMultiplier;
 		_player->_direction = 2;
 		_player->isMoving = true;
 	}	
-	if (keyboardState->IsKeyDown(Input::Keys::A) || keyboardState->IsKeyDown(Input::Keys::LEFT)) {
+	if (keyboardState->IsKeyDown(Input::Keys::A)) {
 		_player->_position->X -= _cSpeed * elaspedTime * _player->speedMultiplier;
 		_player->_direction = 3;
 		_player->isMoving = true;
 	}	
-	if (keyboardState->IsKeyDown(Input::Keys::S) || keyboardState->IsKeyDown(Input::Keys::DOWN)) {
+	if (keyboardState->IsKeyDown(Input::Keys::S)) {
 		_player->_position->Y += _cSpeed * elaspedTime * _player->speedMultiplier;
 		_player->_direction = 0;
 		_player->isMoving = true;
 	}
-	if (keyboardState->IsKeyDown(Input::Keys::D) || keyboardState->IsKeyDown(Input::Keys::RIGHT)) {
+	if (keyboardState->IsKeyDown(Input::Keys::D)) {
 		_player->_position->X += _cSpeed * elaspedTime * _player->speedMultiplier; //Moves Pacman across X axis
 		_player->_direction = 1;
 		_player->isMoving = true;
 	}
-	if (!keyboardState->IsKeyDown(Input::Keys::W) && !keyboardState->IsKeyDown(Input::Keys::UP) && !keyboardState->IsKeyDown(Input::Keys::A) && !keyboardState->IsKeyDown(Input::Keys::LEFT) && !keyboardState->IsKeyDown(Input::Keys::S) && !keyboardState->IsKeyDown(Input::Keys::DOWN) && !keyboardState->IsKeyDown(Input::Keys::D) && !keyboardState->IsKeyDown(Input::Keys::RIGHT)) {
+	if (!keyboardState->IsKeyDown(Input::Keys::W) && !keyboardState->IsKeyDown(Input::Keys::A) && !keyboardState->IsKeyDown(Input::Keys::S) && !keyboardState->IsKeyDown(Input::Keys::D)) {
 		_player->isMoving = false;
 	}
 		
-	
+	if (keyboardState->IsKeyDown(Input::Keys::UP)) {		
+		_player->_direction = 2;
+		_player->isFiring = true;
+	}
+	else if (keyboardState->IsKeyDown(Input::Keys::LEFT)) {
+		_player->_direction = 3;
+		_player->isFiring = true;
+	}
+	else if (keyboardState->IsKeyDown(Input::Keys::DOWN)) {
+		_player->_direction = 0;
+		_player->isFiring = true;
+	}
+	else if (keyboardState->IsKeyDown(Input::Keys::RIGHT)) {
+		_player->_direction = 1;
+		_player->isFiring = true;
+	}
+	else if (!keyboardState->IsKeyDown(Input::Keys::UP) && !keyboardState->IsKeyDown(Input::Keys::LEFT) && !keyboardState->IsKeyDown(Input::Keys::DOWN) && !keyboardState->IsKeyDown(Input::Keys::RIGHT)) {
+		_player->isFiring = false;
+	}
 
 	//Mouse
 	if (mouseState->LeftButton == Input::ButtonState::PRESSED) {
@@ -261,7 +279,7 @@ void GameInstance::Input(int elaspedTime, Input::KeyboardState* state, Input::Mo
 void GameInstance::updatingPlayer(int elapsedTime) {
 	_player->_currentFrameTime += elapsedTime;
 	
-	if (!_player->invincible) {
+	if (!_player->invincible && !_player->isFiring) {
 		if (_player->_currentFrameTime > _cFrameTime) {
 
 			_player->_frame++;
@@ -287,10 +305,22 @@ void GameInstance::updatingPlayer(int elapsedTime) {
 
 			_player->_currentFrameTime = 0.0f;
 			_player->_iCurrentFrameTime += 0.5;
-			if (_player->_iCurrentFrameTime >= 3.5f) {
+			if (_player->_iCurrentFrameTime >= 3.0f) {
 				_player->invincible = false;
-				_player->_iCurrentFrameTime = false;
+				_player->_iCurrentFrameTime = 0;
 			}
+		}
+	}
+	else if (_player->isFiring) {
+		if (_player->_currentFrameTime > _cFrameTime) {
+
+			_player->_frame += 3;
+			
+			if (_player->_frame >= 3) {
+				_player->_frame = 0;				
+			}
+
+			_player->_currentFrameTime = 0;			
 		}
 	}
 	else if (_player->dead) {
@@ -316,7 +346,7 @@ void GameInstance::updatingPlayer(int elapsedTime) {
 	}
 
 	//changing the direction of the player
-	if (_player->isMoving || _player->invincible) {
+	if (_player->isMoving || _player->invincible || _player->isFiring) {
 		_player->_sourceRect->X = _player->_sourceRect->Height * _player->_direction;
 		_player->_sourceRect->Y = _player->_sourceRect->Width * _player->_frame;
 	}
