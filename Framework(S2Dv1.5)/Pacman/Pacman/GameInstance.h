@@ -93,6 +93,9 @@ private:
 	Rect* _mainMenuRectangle;
 	Vector2* _mainMenuStringPosition;
 	bool _start;
+
+	//audio
+	SoundEffect* _coin;
 	
 
 

@@ -37,7 +37,10 @@ GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0
 	_player->_currentFrameTime = 0;
 	_player->speedMultiplier = 1.0f;
 
+	_coin = new SoundEffect();
+	
 	//Initialise important Game aspects
+	Audio::Initialise();
 	Graphics::Initialise(argc, argv, this, 1024, 768, false, 25, 25, "Cold Circle London", 60);
 	Input::Initialise();
 
@@ -50,6 +53,8 @@ GameInstance::~GameInstance()
 	delete _player->_texture;
 	delete _player->_sourceRect;
 	delete _player;
+
+	delete _coin;
 
 	for (int i = 0; i < COLLECTABLECOUNT; i++) {
 		delete _collectable[i]->_texture;
@@ -64,7 +69,6 @@ GameInstance::~GameInstance()
 		delete _ghost[i]->position;
 		delete _ghost[i];
 	}
-
 
 	delete _menuBackground;
 	delete _menuRectangle;
@@ -96,7 +100,7 @@ void GameInstance::LoadContent()
 		_ghost[i]->sourceRect = new Rect(0.0f, 0.0f, 20, 20);
 	}
 
-
+	_coin->Load("Audio/coin.wav");
 
 	// Load Collectable
 	Texture2D* collectableTex = new Texture2D();
@@ -137,6 +141,13 @@ void GameInstance::Update(int elapsedTime)
 	// Gets the current state of the keyboard
 	Input::KeyboardState* keyboardState = Input::Keyboard::GetState();
 	Input::MouseState* mouseState = Input::Mouse::GetState();
+
+	if (!Audio::IsInitialised) {
+		cout << "Audio not initialised\n";
+	}
+	if (!_coin->IsLoaded()) {
+		cout << "_coin not loaded\n";
+	}
 
 	if (keyboardState->IsKeyDown(Input::Keys::SPACE)) {
 		_start = false;
@@ -418,6 +429,7 @@ void GameInstance::checkCollectableCollision() {
 		if ((playerBottom > collectableTop) && (playerTop < collectableBottom) && (playerLeft < collectableRight) && (playerRight > collectableLeft)) {
 			_collectable[i]->_position->Y = 1000;
 			_player->score += 100;
+			Audio::Play(_coin);
 		}
 	}
 }
