@@ -95,7 +95,7 @@ private:
 	Vector2* _mainMenuStringPosition;
 	bool _start;
 	
-
+	SoundEffect* _coin;
 
 	public:
 	/// <summary> Constructs the Pacman class. </summary>
