@@ -110,8 +110,9 @@ void GameInstance::LoadContent()
 	for (int i = 0; i < COLLECTABLECOUNT; i++)
 	{
 		_collectable[i]->_texture = collectableTex;
-		_collectable[i]->_position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
+		_collectable[i]->_position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));		
 		_collectable[i]->_rect = new Rect(0.0f, 0.0f, 32, 32);
+		checkOverlapCollectable();
 	}
 
 	_coin->Load("Audio/coin.wav");
@@ -467,4 +468,49 @@ void GameInstance::checkPlayerDead() {
 		}
 	}
 	
+}
+
+void GameInstance::checkOverlapCollectable() {
+	bool isOverlapping = true;
+
+	srand(time(NULL));
+
+	int collectableTop = 0;
+	int collectableRight = 0;
+	int collectableBottom = 0;
+	int collectableLeft = 0;
+
+	int compareCollectableTop = 0;
+	int compareCollectableRight = 0;
+	int compareCollectableBottom = 0;
+	int compareCollectableLeft = 0;
+	
+
+	while (isOverlapping) {
+		
+		for (int i = 0; i < COLLECTABLECOUNT; i++) {
+			collectableTop = _collectable[i]->_position->Y;
+			collectableRight = _collectable[i]->_position->X + _collectable[i]->_rect->Width;
+			collectableBottom = _collectable[i]->_position->Y + _collectable[i]->_rect->Height;
+			collectableLeft = _collectable[i]->_position->X;
+			
+			compareCollectableTop = _collectable[i + 1]->_position->Y;
+			compareCollectableRight = _collectable[i + 1]->_position->X + _collectable[i + 1]->_rect->Width;
+			compareCollectableBottom = _collectable[i + 1]->_position->Y + _collectable[i + 1]->_rect->Height;
+			compareCollectableLeft = _collectable[i + 1]->_position->X;
+			
+
+			if ((compareCollectableBottom > collectableTop) && (compareCollectableTop < collectableBottom) && (compareCollectableLeft < collectableRight) && (compareCollectableRight > collectableLeft)) {
+				_collectable[i]->_position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
+				isOverlapping = true;
+			}
+			else {
+				isOverlapping = false;
+			}
+
+		}
+
+
+		
+	}
 }

@@ -126,4 +126,6 @@ private:
 	void updateSimpleEnemy(SimpleEnemy*, int elaspedTime);
 
 	void checkPlayerDead();
+
+	void checkOverlapCollectable();
 };
