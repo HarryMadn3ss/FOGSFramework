@@ -61,6 +61,18 @@ struct SimpleEnemy
 	float speed;
 };
 
+struct GameAudio 
+{
+	SoundEffect* _coin;
+
+	SoundEffect* _playerHurt;
+	SoundEffect* _dead;
+
+	SoundEffect* _enemyHurt;
+
+	SoundEffect* _gunShot;
+};
+
 
 
 // Declares the Pacman class which inherits from the Game class.
@@ -95,7 +107,7 @@ private:
 	Vector2* _mainMenuStringPosition;
 	bool _start;
 	
-	SoundEffect* _coin;
+	
 
 	public:
 	/// <summary> Constructs the Pacman class. </summary>
@@ -127,5 +139,5 @@ private:
 
 	void checkPlayerDead();
 
-	void checkOverlapCollectable();
+	/*void checkOverlapCollectable();*/
 };

@@ -20,6 +20,7 @@ GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0
 	_player->score = 0;
 	_player->health = 3;
 	_player->invincible = false;
+	_player->isFiring = false;
 
 	for (int i = 0; i < SIMPLEENEMYCOUNT; i++)
 	{
@@ -112,7 +113,7 @@ void GameInstance::LoadContent()
 		_collectable[i]->_texture = collectableTex;
 		_collectable[i]->_position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));		
 		_collectable[i]->_rect = new Rect(0.0f, 0.0f, 32, 32);
-		checkOverlapCollectable();
+		/*checkOverlapCollectable();*/
 	}
 
 	_coin->Load("Audio/coin.wav");
@@ -231,6 +232,8 @@ void GameInstance::Input(int elaspedTime, Input::KeyboardState* state, Input::Mo
 	}
 
 	// Keyboard
+
+
 	if (keyboardState->IsKeyDown(Input::Keys::W)) {
 		_player->_position->Y -= _cSpeed * elaspedTime * _player->speedMultiplier;
 		_player->_direction = 2;
@@ -305,7 +308,7 @@ void GameInstance::updatingPlayer(int elapsedTime) {
 
 			_player->_frame += 4;
 
-			if (_player->_frame > 4)
+			if (_player->_frame >= 4)
 			{
 				_player->_frame = 0;
 			}
@@ -321,13 +324,19 @@ void GameInstance::updatingPlayer(int elapsedTime) {
 	else if (_player->isFiring) {
 		if (_player->_currentFrameTime > _cFrameTime) {
 
+
 			_player->_frame += 3;
-			
-			if (_player->_frame >= 3) {
-				_player->_frame = 0;				
+
+			if (_player->_frame >= 4)
+			{
+				_player->_frame = 0;
 			}
 
-			_player->_currentFrameTime = 0;			
+			_player->_currentFrameTime = 0.0f;
+			_player->_iCurrentFrameTime += 0.5;
+			if (_player->_iCurrentFrameTime >= 3.0f) {
+				_player->_iCurrentFrameTime = 0;
+			}
 		}
 	}
 	else if (_player->dead) {
@@ -354,8 +363,8 @@ void GameInstance::updatingPlayer(int elapsedTime) {
 
 	//changing the direction of the player
 	if (_player->isMoving || _player->invincible || _player->isFiring) {
-		_player->_sourceRect->X = _player->_sourceRect->Height * _player->_direction;
-		_player->_sourceRect->Y = _player->_sourceRect->Width * _player->_frame;
+		_player->_sourceRect->X = _player->_sourceRect->Width * _player->_direction;
+		_player->_sourceRect->Y = _player->_sourceRect->Height * _player->_frame;
 	}
 	if (_player->dead) {
 		_player->_sourceRect->X = _player->_sourceRect->Height * _player->_direction;
