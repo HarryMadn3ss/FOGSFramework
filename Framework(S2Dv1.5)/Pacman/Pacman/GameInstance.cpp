@@ -51,6 +51,7 @@ GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0
 	_soundManager->_playerHurt = new SoundEffect;
 	_soundManager->_dead = new SoundEffect;
 	_soundManager->_enemyHurt = new SoundEffect;
+	_soundManager->_heart = new SoundEffect;
 
 	//Initialise important Game aspects
 	Audio::Initialise();
@@ -73,6 +74,7 @@ GameInstance::~GameInstance()
 	delete _soundManager->_playerHurt;
 	delete _soundManager->_dead;
 	delete _soundManager->_enemyHurt;
+	delete _soundManager->_heart;
 	delete _soundManager;
 
 	for (int i = 0; i < COLLECTABLECOUNT; i++) {
@@ -138,8 +140,10 @@ void GameInstance::LoadContent()
 		_collectable[i]->_texture = collectableTex;
 		_collectable[i]->_position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));		
 		_collectable[i]->_rect = new Rect(0.0f, 0.0f, 32, 32);
-		/*checkOverlapCollectable();*/
+		
 	}
+
+	checkOverlapCollectable();
 
 	Texture2D* heartTex = new Texture2D();
 	heartTex->Load("Textures/Heart.png", false);
@@ -149,7 +153,7 @@ void GameInstance::LoadContent()
 		_heart[i]->_texture = heartTex;
 		_heart[i]->_position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
 		_heart[i]->_rect = new Rect(0.0f, 0.0f, 32, 32);
-		/*checkOverlapCollectable();*/
+		
 	}
 
 	//load Audio
@@ -158,6 +162,7 @@ void GameInstance::LoadContent()
 	_soundManager->_enemyHurt->Load("Audio/enemyHurt.wav");
 	_soundManager->_gunShot->Load("Audio/gunShot.wav");
 	_soundManager->_playerHurt->Load("Audio/playerHurt.wav");
+	_soundManager->_heart->Load("Audio/heart.wav");
 
 	// Set string position
 	_stringPosition = new Vector2(10.0f, 25.0f);
@@ -211,6 +216,8 @@ void GameInstance::Update(int elapsedTime)
 			updateSimpleEnemy(_ghost[0], elapsedTime);
 			checkSimpleEnemyCollision();
 			checkCollectableCollision();
+			updatingHeartCollectable(elapsedTime);
+			checkHeartCollision();
 		}
 	}
 }
@@ -538,6 +545,31 @@ void GameInstance::checkCollectableCollision() {
 	}
 }
 
+void GameInstance::checkHeartCollision() {
+	int playerTop = _player->_position->Y;
+	int playerRight = _player->_position->X + _player->_sourceRect->Width;
+	int playerBottom = _player->_position->Y + _player->_sourceRect->Height;
+	int playerLeft = _player->_position->X;
+
+	int heartTop = 0;
+	int heartRight = 0;
+	int heartBottom = 0;
+	int heartLeft = 0;
+
+	for (int i = 0; i < HEARTCOUNT; i++) {
+		heartTop = _heart[i]->_position->Y;
+		heartRight = _heart[i]->_position->X + _heart[i]->_rect->Width;
+		heartBottom = _heart[i]->_position->Y + _heart[i]->_rect->Height;
+		heartLeft = _heart[i]->_position->X;
+
+		if ((playerBottom > heartTop) && (playerTop < heartBottom) && (playerLeft < heartRight) && (playerRight > heartLeft)) {
+			_heart[i]->_position->Y = 1000;
+			_player->health ++;
+			Audio::Play(_soundManager->_heart);
+		}
+	}
+}
+
 void GameInstance::checkPlayerDead() {
 	if (_player->health < 1) {
 		_player->dead = true;
@@ -549,47 +581,47 @@ void GameInstance::checkPlayerDead() {
 	
 }
 
-//void GameInstance::checkOverlapCollectable() {
-//	bool isOverlapping = true;
-//
-//	srand(time(NULL));
-//
-//	int collectableTop = 0;
-//	int collectableRight = 0;
-//	int collectableBottom = 0;
-//	int collectableLeft = 0;
-//
-//	int compareCollectableTop = 0;
-//	int compareCollectableRight = 0;
-//	int compareCollectableBottom = 0;
-//	int compareCollectableLeft = 0;
-//	
-//
-//	while (isOverlapping) {
-//		
-//		for (int i = 0; i < COLLECTABLECOUNT; i++) {
-//			collectableTop = _collectable[i]->_position->Y;
-//			collectableRight = _collectable[i]->_position->X + _collectable[i]->_rect->Width;
-//			collectableBottom = _collectable[i]->_position->Y + _collectable[i]->_rect->Height;
-//			collectableLeft = _collectable[i]->_position->X;
-//			
-//			compareCollectableTop = _collectable[i + 1]->_position->Y;
-//			compareCollectableRight = _collectable[i + 1]->_position->X + _collectable[i + 1]->_rect->Width;
-//			compareCollectableBottom = _collectable[i + 1]->_position->Y + _collectable[i + 1]->_rect->Height;
-//			compareCollectableLeft = _collectable[i + 1]->_position->X;
-//			
-//
-//			if ((compareCollectableBottom > collectableTop) && (compareCollectableTop < collectableBottom) && (compareCollectableLeft < collectableRight) && (compareCollectableRight > collectableLeft)) {
-//				_collectable[i]->_position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
-//				isOverlapping = true;
-//			}
-//			else {
-//				isOverlapping = false;
-//			}
-//
-//		}
-//
-//
-//		
-//	}
-//}
+void GameInstance::checkOverlapCollectable() {
+	bool isOverlapping = true;
+
+	srand(time(NULL));
+
+	int collectableTop = 0;
+	int collectableRight = 0;
+	int collectableBottom = 0;
+	int collectableLeft = 0;
+
+	int compareCollectableTop = 0;
+	int compareCollectableRight = 0;
+	int compareCollectableBottom = 0;
+	int compareCollectableLeft = 0;
+	
+	do{
+		
+		for (int i = 0; i < COLLECTABLECOUNT; i++) {
+			collectableTop = _collectable[i]->_position->Y;
+			collectableRight = _collectable[i]->_position->X + _collectable[i]->_rect->Width;
+			collectableBottom = _collectable[i]->_position->Y + _collectable[i]->_rect->Height;
+			collectableLeft = _collectable[i]->_position->X;
+
+			for (int j = 50; j < COLLECTABLECOUNT; j--) {
+				compareCollectableTop = _collectable[j]->_position->Y;
+				compareCollectableRight = _collectable[j]->_position->X + _collectable[j]->_rect->Width;
+				compareCollectableBottom = _collectable[j]->_position->Y + _collectable[j]->_rect->Height;
+				compareCollectableLeft = _collectable[j]->_position->X;
+			}
+			
+			
+
+			if ((compareCollectableBottom > collectableTop) && (compareCollectableTop < collectableBottom) && (compareCollectableLeft < collectableRight) && (compareCollectableRight > collectableLeft)) {
+				_collectable[i]->_position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
+				isOverlapping = true;
+			}
+			else {
+				isOverlapping = false;
+			}
+
+		} 		
+		
+	}while (isOverlapping);
+}

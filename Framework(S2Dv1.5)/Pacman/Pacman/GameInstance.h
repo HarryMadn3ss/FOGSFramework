@@ -65,6 +65,7 @@ struct SimpleEnemy
 struct SoundManager 
 {
 	SoundEffect* _coin;
+	SoundEffect* _heart;
 
 	SoundEffect* _playerHurt;
 	SoundEffect* _dead;
@@ -145,5 +146,7 @@ private:
 
 	void updatingHeartCollectable(int elapsedTime);
 
-	/*void checkOverlapCollectable();*/
+	void checkHeartCollision();
+
+	void checkOverlapCollectable();
 };
