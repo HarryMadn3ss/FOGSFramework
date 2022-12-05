@@ -29,6 +29,12 @@ GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0
 	_player->invincible = false;
 	_player->isFiring = false;
 
+	_projectile = new Projectile();
+	_projectile->_texture = new Texture2D();
+	_projectile->_texture->Load("Textures/bullet.png", false);
+	_projectile->_sourceRect = new Rect(0.0f, 0.0f, 10, 10);
+	
+
 	for (int i = 0; i < SIMPLEENEMYCOUNT; i++)
 	{
 		_ghost[i] = new SimpleEnemy();
@@ -68,6 +74,11 @@ GameInstance::~GameInstance()
 	delete _player->_sourceRect;
 	delete _player;
 
+
+	delete _projectile->_texture;
+	delete _projectile->_position;
+	delete _projectile->_sourceRect;
+	delete _projectile;
 
 	delete _soundManager->_coin;
 	delete _soundManager->_gunShot;
@@ -118,6 +129,10 @@ void GameInstance::LoadContent()
 	_player->_position = new Vector2(350.0f, 350.0f);
 	_player->_sourceRect = new Rect(0.0f, 0.0f, 40, 40);
 
+
+	//load ptrojectile
+	_projectile->_position = new Vector2(_player->_position->X, _player->_position->Y);
+	_projectile->speed = 1;
 	//load ghost
 	Texture2D* ghostTex = new Texture2D();
 	ghostTex->Load("Textures/GhostBlue.png", false);
@@ -129,7 +144,7 @@ void GameInstance::LoadContent()
 		_ghost[i]->sourceRect = new Rect(0.0f, 0.0f, 20, 20);
 	}
 
-
+	
 
 	// Load Collectable
 	Texture2D* collectableTex = new Texture2D();
@@ -218,6 +233,7 @@ void GameInstance::Update(int elapsedTime)
 			checkCollectableCollision();
 			updatingHeartCollectable(elapsedTime);
 			checkHeartCollision();
+			playerFiring(elapsedTime);
 		}
 	}
 }
@@ -232,6 +248,11 @@ void GameInstance::Draw(int elapsedTime)
 
 	
 	SpriteBatch::Draw(_player->_texture, _player->_position, _player->_sourceRect);
+
+	if (_player->isFiring) {
+		SpriteBatch::Draw(_projectile->_texture, _projectile->_position, _projectile->_sourceRect);
+	}
+	
 	
 
 
@@ -624,4 +645,27 @@ void GameInstance::checkOverlapCollectable() {
 		} 		
 		
 	}while (isOverlapping);
+}
+
+void GameInstance::playerFiring(int elapsedTime) {
+
+	if (_player->isFiring) {
+		// load projectile
+		
+				
+		
+
+		if (_player->_direction == 0) {
+			_projectile->_position->Y += _projectile->speed * elapsedTime;
+		}
+		else if (_player->_direction == 1) {
+			_projectile->_position->X += _projectile->speed * elapsedTime;
+		}
+		else if (_player->_direction == 2) {
+			_projectile->_position->Y -= _projectile->speed * elapsedTime;
+		}
+		else if (_player->_direction == 3) {
+			_projectile->_position->X -= _projectile->speed * elapsedTime;
+		}
+	}
 }

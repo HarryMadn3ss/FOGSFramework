@@ -42,6 +42,14 @@ struct Player
 	
 };
 
+struct Projectile {
+	Vector2* _position;
+	Rect* _sourceRect;
+	Texture2D* _texture;
+
+	int speed;
+};
+
 struct Collectable 
 {
 	Rect* _rect;
@@ -88,6 +96,7 @@ private:
 	Collectable* _collectable[COLLECTABLECOUNT];
 	Collectable* _heart[HEARTCOUNT];
 	SimpleEnemy* _ghost[SIMPLEENEMYCOUNT];
+	Projectile* _projectile;
 
 	const float _cSpeed;
 	const int _cFrameTime;
@@ -149,4 +158,6 @@ private:
 	void checkHeartCollision();
 
 	void checkOverlapCollectable();
+
+	void playerFiring(int elaspedTime);
 };
