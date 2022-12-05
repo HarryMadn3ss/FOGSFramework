@@ -61,7 +61,7 @@ struct SimpleEnemy
 	float speed;
 };
 
-struct GameAudio 
+struct SoundManager 
 {
 	SoundEffect* _coin;
 
@@ -106,6 +106,8 @@ private:
 	Rect* _mainMenuRectangle;
 	Vector2* _mainMenuStringPosition;
 	bool _start;
+
+	SoundManager* _soundManager;
 	
 	
 

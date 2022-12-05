@@ -38,7 +38,7 @@ GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0
 	_player->_currentFrameTime = 0;
 	_player->speedMultiplier = 1.0f;
 
-	_coin = new SoundEffect;
+	_soundManager = new SoundManager;
 
 	//Initialise important Game aspects
 	Audio::Initialise();
@@ -55,7 +55,7 @@ GameInstance::~GameInstance()
 	delete _player->_sourceRect;
 	delete _player;
 
-	delete _coin;
+	delete _soundManager;
 
 	for (int i = 0; i < COLLECTABLECOUNT; i++) {
 		delete _collectable[i]->_texture;
@@ -116,7 +116,7 @@ void GameInstance::LoadContent()
 		/*checkOverlapCollectable();*/
 	}
 
-	_coin->Load("Audio/coin.wav");
+	_soundManager->_coin->Load("Audio/coin.wav");
 
 	// Set string position
 	_stringPosition = new Vector2(10.0f, 25.0f);
@@ -464,7 +464,7 @@ void GameInstance::checkCollectableCollision() {
 		if ((playerBottom > collectableTop) && (playerTop < collectableBottom) && (playerLeft < collectableRight) && (playerRight > collectableLeft)) {
 			_collectable[i]->_position->Y = 1000;
 			_player->score += 100;
-			Audio::Play(_coin);
+			Audio::Play(_soundManager->_coin);
 		}
 	}
 }
