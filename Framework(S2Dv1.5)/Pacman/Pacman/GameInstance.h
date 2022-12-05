@@ -12,6 +12,7 @@
 #include "S2D/S2D.h"
 
 #define COLLECTABLECOUNT 50
+#define HEARTCOUNT 3
 
 #define SIMPLEENEMYCOUNT 1
 
@@ -84,6 +85,7 @@ private:
 	
 	Player* _player;
 	Collectable* _collectable[COLLECTABLECOUNT];
+	Collectable* _heart[HEARTCOUNT];
 	SimpleEnemy* _ghost[SIMPLEENEMYCOUNT];
 
 	const float _cSpeed;
@@ -140,6 +142,8 @@ private:
 	void updateSimpleEnemy(SimpleEnemy*, int elaspedTime);
 
 	void checkPlayerDead();
+
+	void updatingHeartCollectable(int elapsedTime);
 
 	/*void checkOverlapCollectable();*/
 };

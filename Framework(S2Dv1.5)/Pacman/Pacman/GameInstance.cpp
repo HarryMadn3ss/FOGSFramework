@@ -15,6 +15,13 @@ GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0
 		_collectable[i]->_currentFrameTime = 0;
 	}
 
+	for (int i = 0; i < HEARTCOUNT; i++)
+	{
+		_heart[i] = new Collectable();
+		_heart[i]->_frame = 0;
+		_heart[i]->_currentFrameTime = 0;
+	}
+
 	_player = new Player();
 	_player->dead = false;
 	_player->score = 0;
@@ -38,7 +45,12 @@ GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0
 	_player->_currentFrameTime = 0;
 	_player->speedMultiplier = 1.0f;
 
-	_soundManager = new SoundManager;
+	_soundManager = new SoundManager;	
+	_soundManager->_coin = new SoundEffect;
+	_soundManager->_gunShot = new SoundEffect;
+	_soundManager->_playerHurt = new SoundEffect;
+	_soundManager->_dead = new SoundEffect;
+	_soundManager->_enemyHurt = new SoundEffect;
 
 	//Initialise important Game aspects
 	Audio::Initialise();
@@ -55,6 +67,12 @@ GameInstance::~GameInstance()
 	delete _player->_sourceRect;
 	delete _player;
 
+
+	delete _soundManager->_coin;
+	delete _soundManager->_gunShot;
+	delete _soundManager->_playerHurt;
+	delete _soundManager->_dead;
+	delete _soundManager->_enemyHurt;
 	delete _soundManager;
 
 	for (int i = 0; i < COLLECTABLECOUNT; i++) {
@@ -62,6 +80,13 @@ GameInstance::~GameInstance()
 		delete _collectable[i]->_rect;
 		delete _collectable[i]->_position;
 		delete _collectable[i];
+	}
+
+	for (int i = 0; i < HEARTCOUNT; i++) {
+		delete _heart[i]->_texture;
+		delete _heart[i]->_rect;
+		delete _heart[i]->_position;
+		delete _heart[i];
 	}
 
 	for (int i = 0; i < SIMPLEENEMYCOUNT; i++) {
@@ -116,7 +141,23 @@ void GameInstance::LoadContent()
 		/*checkOverlapCollectable();*/
 	}
 
+	Texture2D* heartTex = new Texture2D();
+	heartTex->Load("Textures/Heart.png", false);
+
+	for (int i = 0; i < HEARTCOUNT; i++)
+	{
+		_heart[i]->_texture = heartTex;
+		_heart[i]->_position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
+		_heart[i]->_rect = new Rect(0.0f, 0.0f, 32, 32);
+		/*checkOverlapCollectable();*/
+	}
+
+	//load Audio
 	_soundManager->_coin->Load("Audio/coin.wav");
+	_soundManager->_dead->Load("Audio/dead.wav");
+	_soundManager->_enemyHurt->Load("Audio/enemyHurt.wav");
+	_soundManager->_gunShot->Load("Audio/gunShot.wav");
+	_soundManager->_playerHurt->Load("Audio/playerHurt.wav");
 
 	// Set string position
 	_stringPosition = new Vector2(10.0f, 25.0f);
@@ -189,6 +230,10 @@ void GameInstance::Draw(int elapsedTime)
 
 	for (int i = 0; i < COLLECTABLECOUNT; i++) {
 		SpriteBatch::Draw(_collectable[i]->_texture, _collectable[i]->_position, _collectable[i]->_rect); //Draw Collectable
+	}
+
+	for (int i = 0; i < HEARTCOUNT; i++) {
+		SpriteBatch::Draw(_heart[i]->_texture, _heart[i]->_position, _heart[i]->_rect);
 	}
 
 	for (int i = 0; i < SIMPLEENEMYCOUNT; i++) {
@@ -308,7 +353,7 @@ void GameInstance::updatingPlayer(int elapsedTime) {
 
 			_player->_frame += 4;
 
-			if (_player->_frame >= 4)
+			if (_player->_frame > 4)
 			{
 				_player->_frame = 0;
 			}
@@ -326,6 +371,7 @@ void GameInstance::updatingPlayer(int elapsedTime) {
 
 
 			_player->_frame += 3;
+			Audio::Play(_soundManager->_gunShot);
 
 			if (_player->_frame >= 4)
 			{
@@ -398,6 +444,29 @@ void GameInstance::updatingCollectable(int elapsedTime) {
 	}
 }
 
+void GameInstance::updatingHeartCollectable(int elapsedTime) {
+
+	for (int i = 0; i <	HEARTCOUNT; i++) {
+
+		_heart[i]->_currentFrameTime += elapsedTime;
+
+		if (_heart[i]->_currentFrameTime > _cCollectableFrameTime) {
+			_heart[i]->_frame++;
+
+			if (_heart[i]->_frame >= 3) {
+				_heart[i]->_frame = 0;
+			}
+
+			_heart[i]->_currentFrameTime = 0;
+
+		}
+
+		//Changing the colectable sheet
+
+		_heart[i]->_rect->X = _heart[i]->_rect->Width * _heart[i]->_frame;
+	}
+}
+
 void GameInstance::updateSimpleEnemy(SimpleEnemy* ghost, int elapsedTime) {
 	if (ghost->direction == 0) {
 		ghost->position->X += ghost->speed * elapsedTime;
@@ -434,8 +503,8 @@ void GameInstance::checkSimpleEnemyCollision() {
 
 			if ((playerBottom > enemyTop) && (playerTop < enemyBottom) && (playerLeft < enemyRight) && (playerRight > enemyLeft)) {
 				_player->health -= 1;
-				checkPlayerDead();
-				i = SIMPLEENEMYCOUNT;
+				Audio::Play(_soundManager->_enemyHurt);
+				checkPlayerDead();				i = SIMPLEENEMYCOUNT;
 				_player->invincible = true;
 			}
 		}
@@ -472,6 +541,7 @@ void GameInstance::checkCollectableCollision() {
 void GameInstance::checkPlayerDead() {
 	if (_player->health < 1) {
 		_player->dead = true;
+		Audio::Play(_soundManager->_dead);
 		if (_player->health < 0) {
 			_player->health = 0;
 		}
