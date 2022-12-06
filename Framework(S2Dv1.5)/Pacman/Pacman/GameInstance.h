@@ -24,8 +24,7 @@ using namespace S2D;
 
 struct Player
 {
-	Vector2* _position;
-	Vector2* _center;
+	Vector2* _position;	
 	Rect* _sourceRect;
 	Texture2D* _texture;
 
@@ -37,6 +36,8 @@ struct Player
 	float speedMultiplier;
 	int score;
 	int health;
+	int noBullets;
+
 	bool dead;
 	bool isMoving;
 	bool isFiring;
@@ -51,8 +52,11 @@ struct Projectile {
 	
 	int _frame;
 	int _currentFrame;
-	int speed;
+	int speedX;
+	int speedY;
 	int velocity;
+	
+	bool beenFired;
 };
 
 struct Collectable 
@@ -166,5 +170,7 @@ private:
 
 	void checkOverlapCollectable();
 
-	void playerFiring(int elaspedTime);
+	void createBullet(int elapsedTime);
+
+	void updateBullet(Projectile*, int elapsedTime);
 };
