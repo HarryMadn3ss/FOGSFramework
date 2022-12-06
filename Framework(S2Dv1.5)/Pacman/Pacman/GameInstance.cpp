@@ -28,19 +28,18 @@ GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0
 	_player->health = 3;
 	_player->invincible = false;
 	_player->isFiring = false;
-
-	_projectile = new Projectile();
-	_projectile->_texture = new Texture2D();
-	_projectile->_texture->Load("Textures/bullet.png", false);
-	_projectile->_sourceRect = new Rect(0.0f, 0.0f, 10, 10);
 	
-
+	for (int i = 0; i < PROJECTILECOUNT; i++) {
+	_projectile[i] = new Projectile();
+	_projectile[i]->_sourceRect = new Rect(0.0f, 0.0f, 10, 10);
+	_projectile[i]->_position = new Vector2(0, 1000);
+	}
+	
 	for (int i = 0; i < SIMPLEENEMYCOUNT; i++)
 	{
 		_ghost[i] = new SimpleEnemy();
 		_ghost[i]->direction = 0;
 		_ghost[i]->speed = 0.2f;
-
 	}
 
 	_paused = false;
@@ -75,11 +74,13 @@ GameInstance::~GameInstance()
 	delete _player;
 
 
-	delete _projectile->_texture;
-	delete _projectile->_position;
-	delete _projectile->_sourceRect;
-	delete _projectile;
-
+	for (int i = 0; i < PROJECTILECOUNT; i++) {
+		delete _projectile[i]->_texture;
+		delete _projectile[i]->_position;
+		delete _projectile[i]->_sourceRect;
+		delete _projectile[i];
+	}
+	
 	delete _soundManager->_coin;
 	delete _soundManager->_gunShot;
 	delete _soundManager->_playerHurt;
@@ -109,7 +110,6 @@ GameInstance::~GameInstance()
 		delete _ghost[i];
 	}
 
-
 	delete _menuBackground;
 	delete _menuRectangle;
 	delete _menuStringPosition;
@@ -130,9 +130,15 @@ void GameInstance::LoadContent()
 	_player->_sourceRect = new Rect(0.0f, 0.0f, 40, 40);
 
 
-	//load ptrojectile
-	_projectile->_position = new Vector2(_player->_position->X, _player->_position->Y);
-	_projectile->speed = 1;
+	//load projectile
+	Texture2D* _bulletTex = new Texture2D();
+	_bulletTex->Load("Textures/bullet.png", false);
+
+	for (int i = 0; i < PROJECTILECOUNT; i++) {
+		_projectile[i]->speed = 1;
+		_projectile[i]->_texture = _bulletTex;
+	}	
+
 	//load ghost
 	Texture2D* ghostTex = new Texture2D();
 	ghostTex->Load("Textures/GhostBlue.png", false);
@@ -249,9 +255,11 @@ void GameInstance::Draw(int elapsedTime)
 	
 	SpriteBatch::Draw(_player->_texture, _player->_position, _player->_sourceRect);
 
-	if (_player->isFiring) {
-		SpriteBatch::Draw(_projectile->_texture, _projectile->_position, _projectile->_sourceRect);
+	for (int i = 0; i < PROJECTILECOUNT; i++) {
+		SpriteBatch::Draw(_projectile[i]->_texture, _projectile[i]->_position, _projectile[i]->_sourceRect);
 	}
+	
+	
 	
 	
 
@@ -649,23 +657,33 @@ void GameInstance::checkOverlapCollectable() {
 
 void GameInstance::playerFiring(int elapsedTime) {
 
+	/*for (int i = 0; i > PROJECTILECOUNT; i++) {
+		_projectile[i]->_position = new Vector2(_player->_position->X, _player->_position->Y);
+	}*/
+
+	Vector2* _startPosition = new Vector2(_player->_position->X, _player->_position->Y);
+
 	if (_player->isFiring) {
 		// load projectile
-		
-				
-		
 
-		if (_player->_direction == 0) {
-			_projectile->_position->Y += _projectile->speed * elapsedTime;
-		}
-		else if (_player->_direction == 1) {
-			_projectile->_position->X += _projectile->speed * elapsedTime;
-		}
-		else if (_player->_direction == 2) {
-			_projectile->_position->Y -= _projectile->speed * elapsedTime;
-		}
-		else if (_player->_direction == 3) {
-			_projectile->_position->X -= _projectile->speed * elapsedTime;
-		}
+		
+		
+		for (int i = 0; i < PROJECTILECOUNT; i++)
+		{
+			
+
+			if (_player->_direction == 0) {
+				(_projectile[i]->_position = _startPosition) += _projectile[i]->speed * elapsedTime;
+			}
+			else if (_player->_direction == 1) {
+				_projectile[i]->_position->X += _projectile[i]->speed * elapsedTime;
+			}
+			else if (_player->_direction == 2) {
+				_projectile[i]->_position->Y -= _projectile[i]->speed * elapsedTime;
+			}
+			else if (_player->_direction == 3) {
+				_projectile[i]->_position->X -= _projectile[i]->speed * elapsedTime;
+			}
+		}		
 	}
 }

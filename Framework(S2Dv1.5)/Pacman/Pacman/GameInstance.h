@@ -10,10 +10,11 @@
 
 // Just need to include main header file
 #include "S2D/S2D.h"
+#include <vector>
 
 #define COLLECTABLECOUNT 50
 #define HEARTCOUNT 3
-
+#define PROJECTILECOUNT 50
 #define SIMPLEENEMYCOUNT 1
 
 // Reduces the amount of typing by including all classes in S2D namespace
@@ -46,6 +47,7 @@ struct Projectile {
 	Vector2* _position;
 	Rect* _sourceRect;
 	Texture2D* _texture;
+	
 
 	int speed;
 };
@@ -96,7 +98,7 @@ private:
 	Collectable* _collectable[COLLECTABLECOUNT];
 	Collectable* _heart[HEARTCOUNT];
 	SimpleEnemy* _ghost[SIMPLEENEMYCOUNT];
-	Projectile* _projectile;
+	Projectile* _projectile[PROJECTILECOUNT];
 
 	const float _cSpeed;
 	const int _cFrameTime;
