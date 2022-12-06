@@ -5,7 +5,7 @@
 
 using namespace std;
 
-GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0.1f), _cFrameTime(250), _cCollectableFrameTime(500)
+GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0.1f), _cFrameTime(250), _cCollectableFrameTime(500), _cProjectileFrameTime(500)
 {
 
 	for (int i = 0; i < COLLECTABLECOUNT; i++)
@@ -29,11 +29,16 @@ GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0
 	_player->invincible = false;
 	_player->isFiring = false;
 	
+	
+	
+	
 	for (int i = 0; i < PROJECTILECOUNT; i++) {
-	_projectile[i] = new Projectile();
-	_projectile[i]->_sourceRect = new Rect(0.0f, 0.0f, 10, 10);
-	_projectile[i]->_position = new Vector2(0, 1000);
+	_projectile[i] = new Projectile();	
+	_projectile[i]->_frame = 0;
+	_projectile[i]->_currentFrame = 0;
 	}
+
+	
 	
 	for (int i = 0; i < SIMPLEENEMYCOUNT; i++)
 	{
@@ -70,7 +75,7 @@ GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0
 GameInstance::~GameInstance()
 {
 	delete _player->_texture;
-	delete _player->_sourceRect;
+	delete _player->_sourceRect;	
 	delete _player;
 
 
@@ -135,8 +140,10 @@ void GameInstance::LoadContent()
 	_bulletTex->Load("Textures/bullet.png", false);
 
 	for (int i = 0; i < PROJECTILECOUNT; i++) {
-		_projectile[i]->speed = 1;
+		_projectile[i]->speed = 0.2;
 		_projectile[i]->_texture = _bulletTex;
+		_projectile[i]->_position = new Vector2(350, 350);
+		_projectile[i]->_sourceRect = new Rect(0.0f, 0.0f, 10, 10);		
 	}	
 
 	//load ghost
@@ -231,6 +238,7 @@ void GameInstance::Update(int elapsedTime)
 		if (!_paused) {
 			if (!_player->dead) {
 				Input(elapsedTime, keyboardState, mouseState);
+				
 			}			
 			updatingPlayer(elapsedTime);
 			updatingCollectable(elapsedTime);
@@ -239,7 +247,7 @@ void GameInstance::Update(int elapsedTime)
 			checkCollectableCollision();
 			updatingHeartCollectable(elapsedTime);
 			checkHeartCollision();
-			playerFiring(elapsedTime);
+			
 		}
 	}
 }
@@ -259,10 +267,6 @@ void GameInstance::Draw(int elapsedTime)
 		SpriteBatch::Draw(_projectile[i]->_texture, _projectile[i]->_position, _projectile[i]->_sourceRect);
 	}
 	
-	
-	
-	
-
 
 	for (int i = 0; i < COLLECTABLECOUNT; i++) {
 		SpriteBatch::Draw(_collectable[i]->_texture, _collectable[i]->_position, _collectable[i]->_rect); //Draw Collectable
@@ -299,10 +303,10 @@ void GameInstance::Draw(int elapsedTime)
 }
 
 
-void GameInstance::Input(int elaspedTime, Input::KeyboardState* state, Input::MouseState* mouseState) {
+void GameInstance::Input(int elapsedTime, Input::KeyboardState* state, Input::MouseState* mouseState) {
 
 	Input::KeyboardState* keyboardState = Input::Keyboard::GetState();
-
+	
 
 	//Sprint
 	if (keyboardState->IsKeyDown(Input::Keys::LEFTSHIFT)) {
@@ -316,22 +320,22 @@ void GameInstance::Input(int elaspedTime, Input::KeyboardState* state, Input::Mo
 
 
 	if (keyboardState->IsKeyDown(Input::Keys::W)) {
-		_player->_position->Y -= _cSpeed * elaspedTime * _player->speedMultiplier;
+		_player->_position->Y -= _cSpeed * elapsedTime * _player->speedMultiplier;
 		_player->_direction = 2;
 		_player->isMoving = true;
 	}	
 	if (keyboardState->IsKeyDown(Input::Keys::A)) {
-		_player->_position->X -= _cSpeed * elaspedTime * _player->speedMultiplier;
+		_player->_position->X -= _cSpeed * elapsedTime * _player->speedMultiplier;
 		_player->_direction = 3;
 		_player->isMoving = true;
 	}	
 	if (keyboardState->IsKeyDown(Input::Keys::S)) {
-		_player->_position->Y += _cSpeed * elaspedTime * _player->speedMultiplier;
+		_player->_position->Y += _cSpeed * elapsedTime * _player->speedMultiplier;
 		_player->_direction = 0;
 		_player->isMoving = true;
 	}
 	if (keyboardState->IsKeyDown(Input::Keys::D)) {
-		_player->_position->X += _cSpeed * elaspedTime * _player->speedMultiplier; //Moves Pacman across X axis
+		_player->_position->X += _cSpeed * elapsedTime * _player->speedMultiplier; //Moves Pacman across X axis
 		_player->_direction = 1;
 		_player->isMoving = true;
 	}
@@ -342,21 +346,26 @@ void GameInstance::Input(int elaspedTime, Input::KeyboardState* state, Input::Mo
 	if (keyboardState->IsKeyDown(Input::Keys::UP)) {		
 		_player->_direction = 2;
 		_player->isFiring = true;
+
 	}
 	else if (keyboardState->IsKeyDown(Input::Keys::LEFT)) {
 		_player->_direction = 3;
 		_player->isFiring = true;
+		playerFiring(elapsedTime);
 	}
 	else if (keyboardState->IsKeyDown(Input::Keys::DOWN)) {
 		_player->_direction = 0;
 		_player->isFiring = true;
+		playerFiring(elapsedTime);
 	}
 	else if (keyboardState->IsKeyDown(Input::Keys::RIGHT)) {
 		_player->_direction = 1;
 		_player->isFiring = true;
+		playerFiring(elapsedTime);
 	}
 	else if (!keyboardState->IsKeyDown(Input::Keys::UP) && !keyboardState->IsKeyDown(Input::Keys::LEFT) && !keyboardState->IsKeyDown(Input::Keys::DOWN) && !keyboardState->IsKeyDown(Input::Keys::RIGHT)) {
 		_player->isFiring = false;
+		playerFiring(elapsedTime);
 	}
 
 	//Mouse
@@ -661,29 +670,44 @@ void GameInstance::playerFiring(int elapsedTime) {
 		_projectile[i]->_position = new Vector2(_player->_position->X, _player->_position->Y);
 	}*/
 
-	Vector2* _startPosition = new Vector2(_player->_position->X, _player->_position->Y);
+	/*Vector2* _startPosition = new Vector2(_player->_position->X, _player->_position->Y);
+		*/
+	/*if (_player->isFiring) {*/
+		//for (int i = 0; i < PROJECTILECOUNT; i++)
+		//{		
 
-	if (_player->isFiring) {
-		// load projectile
+		//	if (_player->_direction == 0) {
+		//		_projectile[i]->_position = new Vector2(_player->_position->X, ((_player->_position->Y + _projectile[i]->speed) * elapsedTime));
+		//		
+		//	}
+		//	else if (_player->_direction == 1) {
+		//		_projectile[i]->_position = new Vector2(((_player->_position->X + _projectile[i]->speed)/* * elapsedTime*/), _player->_position->Y);
+		//		
+		//	}
+		//	else if (_player->_direction == 2) {
+		//		_projectile[i]->_position = new Vector2(_player->_position->X, _player->_position->Y);
+		//		_projectile[i]->_position->Y -= _projectile[i]->speed * elapsedTime;
+		//	}
+		//	else if (_player->_direction == 3) {
+		//		_projectile[i]->_position = new Vector2(_player->_position->X, _player->_position->Y);
+		//		_projectile[i]->_position->Y -= _projectile[i]->speed * elapsedTime;
+		//	}
+		//}
+	//}
 
-		
-		
-		for (int i = 0; i < PROJECTILECOUNT; i++)
-		{
-			
+	/*_player->_position->X += _cSpeed * elapsedTime * _player->speedMultiplier;*/
 
-			if (_player->_direction == 0) {
-				(_projectile[i]->_position = _startPosition) += _projectile[i]->speed * elapsedTime;
-			}
-			else if (_player->_direction == 1) {
-				_projectile[i]->_position->X += _projectile[i]->speed * elapsedTime;
-			}
-			else if (_player->_direction == 2) {
-				_projectile[i]->_position->Y -= _projectile[i]->speed * elapsedTime;
-			}
-			else if (_player->_direction == 3) {
-				_projectile[i]->_position->X -= _projectile[i]->speed * elapsedTime;
-			}
-		}		
+	
+
+	for (int i = 0; i < PROJECTILECOUNT; i++)
+	{
+		if (_player->_direction == 0) {
+			_projectile[i]->_position = new Vector2(_player->_position->X, _player->_position->Y);			
+			/*_projectile[i]->velocity = _player->_direction * _projectile[i]->speed;*/
+			_projectile[i]->_position->Y += _projectile[i]->speed * elapsedTime;
+
+		}
 	}
+	
+		
 }

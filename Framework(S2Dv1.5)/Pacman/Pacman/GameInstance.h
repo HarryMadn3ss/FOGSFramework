@@ -25,6 +25,7 @@ using namespace S2D;
 struct Player
 {
 	Vector2* _position;
+	Vector2* _center;
 	Rect* _sourceRect;
 	Texture2D* _texture;
 
@@ -48,8 +49,10 @@ struct Projectile {
 	Rect* _sourceRect;
 	Texture2D* _texture;
 	
-
+	int _frame;
+	int _currentFrame;
 	int speed;
+	int velocity;
 };
 
 struct Collectable 
@@ -102,6 +105,8 @@ private:
 
 	const float _cSpeed;
 	const int _cFrameTime;
+
+	const int _cProjectileFrameTime;
 
 	const int _cCollectableFrameTime;
 
