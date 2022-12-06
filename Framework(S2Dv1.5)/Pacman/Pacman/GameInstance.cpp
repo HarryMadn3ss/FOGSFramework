@@ -710,7 +710,7 @@ void GameInstance::updateBullet(Projectile* _bullet, int elapsedTime) {
 		/*Sleep(10);
 		_bullet->beenFired = false;*/
 	}
-	if (_player->_direction == 4) {
+	if (_player->_direction == 2) {
 		_bullet->_position->Y -= 1 * elapsedTime;
 		_bullet->beenFired = true;
 		/*Sleep(10);
