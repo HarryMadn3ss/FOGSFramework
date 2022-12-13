@@ -33,15 +33,19 @@ struct Player
 	int _direction;
 	int _iFrame;
 	float _iCurrentFrameTime;
-	float speedMultiplier;
-	int score;
-	int health;
-	int noBullets;
+	float _speedMultiplier;
+	int _score;
+	int _health;
+	int _bulletCount;
 
-	bool dead;
-	bool isMoving;
-	bool isFiring;
-	bool invincible;
+	float _firingCooldown;
+	float _cooldownBetShot;
+
+
+	bool _dead;
+	bool _isMoving;
+	bool _isFiring;
+	bool _invincible;
 	
 };
 
@@ -55,8 +59,11 @@ struct Projectile {
 	int speedX;
 	int speedY;
 	int velocity;
+	int _direction;
+
 	
-	bool beenFired;
+
+	bool _beenFired;
 };
 
 struct Collectable 
@@ -71,12 +78,14 @@ struct Collectable
 
 struct SimpleEnemy 
 {
-	Vector2* position;
-	Texture2D* texture;
-	Rect* sourceRect;
+	Vector2* _position;
+	Texture2D* _texture;
+	Rect* _sourceRect;
 
-	int direction;
-	float speed;
+	int _health;
+
+	int _direction;
+	float _speed;
 };
 
 

@@ -24,11 +24,12 @@ GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0
 	}
 
 	_player = new Player();
-	_player->dead = false;
-	_player->score = 0;
-	_player->health = 3;
-	_player->invincible = false;
-	_player->isFiring = false;
+	_player->_dead = false;
+	_player->_score = 0;
+	_player->_health = 3;
+	_player->_invincible = false;
+	_player->_isFiring = false;
+	_player->_cooldownBetShot = 500;
 	
 	_mainMenu = new MainMenu();
 	_mainMenu->_start = true;
@@ -50,14 +51,15 @@ GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0
 	for (int i = 0; i < SIMPLEENEMYCOUNT; i++)
 	{
 		_ghost[i] = new SimpleEnemy();
-		_ghost[i]->direction = 0;
-		_ghost[i]->speed = 0.2f;
+		_ghost[i]->_direction = 0;
+		_ghost[i]->_speed = 0.2f;
+		_ghost[i]->_health = 2;
 	}
 	
 
 	_player->_frame = 0;
 	_player->_currentFrameTime = 0;
-	_player->speedMultiplier = 1.0f;
+	_player->_speedMultiplier = 1.0f;
 
 
 	
@@ -110,9 +112,9 @@ GameInstance::~GameInstance()
 	}
 
 	for (int i = 0; i < SIMPLEENEMYCOUNT; i++) {
-		delete _ghost[i]->texture;
-		delete _ghost[i]->sourceRect;
-		delete _ghost[i]->position;
+		delete _ghost[i]->_texture;
+		delete _ghost[i]->_sourceRect;
+		delete _ghost[i]->_position;
 		delete _ghost[i];
 	}
 
@@ -146,7 +148,7 @@ void GameInstance::LoadContent()
 		_projectile[i]->_texture = _bulletTex;
 		_projectile[i]->_position = new Vector2(350, 350);
 		_projectile[i]->_sourceRect = new Rect(0.0f, 0.0f, 10, 10);	
-		_projectile[i]->beenFired = false;
+		_projectile[i]->_beenFired = false;
 	}	
 
 	//load ghost
@@ -155,9 +157,9 @@ void GameInstance::LoadContent()
 
 	for (int i = 0; i < SIMPLEENEMYCOUNT; i++)
 	{
-		_ghost[i]->texture = ghostTex;
-		_ghost[i]->position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
-		_ghost[i]->sourceRect = new Rect(0.0f, 0.0f, 20, 20);
+		_ghost[i]->_texture = ghostTex;
+		_ghost[i]->_position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
+		_ghost[i]->_sourceRect = new Rect(0.0f, 0.0f, 20, 20);
 	}
 
 	
@@ -234,7 +236,7 @@ void GameInstance::Update(int elapsedTime)
 			_pauseMenu->_pKeyDown = false;
 		}
 		if (!_pauseMenu->_paused) {
-			if (!_player->dead) {
+			if (!_player->_dead) {
 				Input(elapsedTime, keyboardState, mouseState);				
 			}			
 			updatingPlayer(elapsedTime);
@@ -244,6 +246,7 @@ void GameInstance::Update(int elapsedTime)
 			checkCollectableCollision();
 			updatingHeartCollectable(elapsedTime);
 			checkHeartCollision();
+			bulletCollision();
 			for (int i = 0; i < PROJECTILECOUNT; i++) {
 				updateBullet(_projectile[i], elapsedTime);
 			}
@@ -256,7 +259,7 @@ void GameInstance::Draw(int elapsedTime)
 {
 	// player coords
 	std::stringstream stream;
-	stream << "Player X: " << _player->_position->X << " Y: " << _player->_position->Y << " Player Score: " << _player->score << " Player Health: " << _player->health;
+	stream << "Player X: " << _player->_position->X << " Y: " << _player->_position->Y << " Player Score: " << _player->_score << " Player Health: " << _player->_health;
 
 	SpriteBatch::BeginDraw(); // Starts Drawing
 
@@ -264,7 +267,7 @@ void GameInstance::Draw(int elapsedTime)
 	SpriteBatch::Draw(_player->_texture, _player->_position, _player->_sourceRect);
 
 	for (int i = 0; i < PROJECTILECOUNT; i++) {
-		if (_projectile[i]->beenFired) {
+		if (_projectile[i]->_beenFired) {
 			SpriteBatch::Draw(_projectile[i]->_texture, _projectile[i]->_position, _projectile[i]->_sourceRect);
 		}
 		
@@ -280,7 +283,7 @@ void GameInstance::Draw(int elapsedTime)
 	}
 
 	for (int i = 0; i < SIMPLEENEMYCOUNT; i++) {
-		SpriteBatch::Draw(_ghost[i]->texture, _ghost[i]->position, _ghost[i]->sourceRect);
+		SpriteBatch::Draw(_ghost[i]->_texture, _ghost[i]->_position, _ghost[i]->_sourceRect);
 	}
 
 	// Draws String
@@ -313,66 +316,103 @@ void GameInstance::Input(int elapsedTime, Input::KeyboardState* state, Input::Mo
 
 	//Sprint
 	if (keyboardState->IsKeyDown(Input::Keys::LEFTSHIFT)) {
-		_player->speedMultiplier = 4.0f;
+		_player->_speedMultiplier = 4.0f;
 	}
 	else {
-		_player->speedMultiplier = 2.0f;
+		_player->_speedMultiplier = 2.0f;
 	}
 
 	// Keyboard
 
 
 	if (keyboardState->IsKeyDown(Input::Keys::W)) {
-		_player->_position->Y -= _cSpeed * elapsedTime * _player->speedMultiplier;
+		_player->_position->Y -= _cSpeed * elapsedTime * _player->_speedMultiplier;
 		_player->_direction = 2;
-		_player->isMoving = true;
+		_player->_isMoving = true;
 	}	
 	if (keyboardState->IsKeyDown(Input::Keys::A)) {
-		_player->_position->X -= _cSpeed * elapsedTime * _player->speedMultiplier;
+		_player->_position->X -= _cSpeed * elapsedTime * _player->_speedMultiplier;
 		_player->_direction = 3;
-		_player->isMoving = true;
+		_player->_isMoving = true;
 	}	
 	if (keyboardState->IsKeyDown(Input::Keys::S)) {
-		_player->_position->Y += _cSpeed * elapsedTime * _player->speedMultiplier;
+		_player->_position->Y += _cSpeed * elapsedTime * _player->_speedMultiplier;
 		_player->_direction = 0;
-		_player->isMoving = true;
+		_player->_isMoving = true;
 	}
 	if (keyboardState->IsKeyDown(Input::Keys::D)) {
-		_player->_position->X += _cSpeed * elapsedTime * _player->speedMultiplier; //Moves Pacman across X axis
+		_player->_position->X += _cSpeed * elapsedTime * _player->_speedMultiplier; //Moves Pacman across X axis
 		_player->_direction = 1;
-		_player->isMoving = true;
+		_player->_isMoving = true;
 	}
 	if (!keyboardState->IsKeyDown(Input::Keys::W) && !keyboardState->IsKeyDown(Input::Keys::A) && !keyboardState->IsKeyDown(Input::Keys::S) && !keyboardState->IsKeyDown(Input::Keys::D)) {
-		_player->isMoving = false;
+		_player->_isMoving = false;
 	}
 		
-	if (keyboardState->IsKeyDown(Input::Keys::UP)) {		
-		_player->_direction = 2;
-		_player->isFiring = true;
-		_player->noBullets++;
-		createBullet(elapsedTime);		
+	//_player->_firingCooldown = 0;
+	//while (_player->_firingCooldown != 0)
+	//{
+	//	_player->_firingCooldown++;
+	//	if (_player->_firingCooldown >= 10) {
+	//		_player->_firingCooldown = 0;
+	//	}
+	//}
+
+	if (_player->_firingCooldown > 0)
+	{		
+		if (_player->_firingCooldown < _player->_cooldownBetShot - 250) {
+			_player->_isFiring = false;
+		}
+		_player->_firingCooldown -= elapsedTime;
 	}
-	else if (keyboardState->IsKeyDown(Input::Keys::LEFT)) {
-		_player->_direction = 3;
-		_player->isFiring = true;
-		_player->noBullets++;
-		createBullet(elapsedTime);
+	//else
+	{
+		if (keyboardState->IsKeyDown(Input::Keys::UP)/* && _player->_firingCooldown == 0*/) {		
+			_player->_direction = 2;
+			if (_player->_firingCooldown <= 0)
+			{
+				_player->_isFiring = true;
+				_player->_bulletCount++;
+				createBullet(elapsedTime);
+				_player->_firingCooldown = _player->_cooldownBetShot; //10 seconds from the 16ms per frame
+			}
+		}
+		else if (keyboardState->IsKeyDown(Input::Keys::LEFT)/* && _player->_firingCooldown == 0*/) {
+			_player->_direction = 3;
+			if (_player->_firingCooldown <= 0)
+			{
+				_player->_isFiring = true;
+				_player->_bulletCount++;
+				createBullet(elapsedTime);
+				_player->_firingCooldown = _player->_cooldownBetShot; //10 seconds from the 16ms per frame
+			}
+		}
+		else if (keyboardState->IsKeyDown(Input::Keys::DOWN)/* && _player->_firingCooldown == 0*/) {
+			_player->_direction = 0;
+			if (_player->_firingCooldown <= 0)
+			{
+				_player->_isFiring = true;
+				_player->_bulletCount++;
+				createBullet(elapsedTime);
+				_player->_firingCooldown = _player->_cooldownBetShot; //10 seconds from the 16ms per frame
+			}
+		}
+		else if (keyboardState->IsKeyDown(Input::Keys::RIGHT)/* && _player->_firingCooldown == 0*/) {
+			_player->_direction = 1;
+			if (_player->_firingCooldown <= 0)
+			{
+				_player->_isFiring = true;
+				_player->_bulletCount++;
+				createBullet(elapsedTime);
+				_player->_firingCooldown = _player->_cooldownBetShot; //10 seconds from the 16ms per frame
+			}
+		}
+		else if (!keyboardState->IsKeyDown(Input::Keys::UP) && !keyboardState->IsKeyDown(Input::Keys::LEFT) && !keyboardState->IsKeyDown(Input::Keys::DOWN) && !keyboardState->IsKeyDown(Input::Keys::RIGHT)) {
+			_player->_isFiring = false;		
+		}
 	}
-	else if (keyboardState->IsKeyDown(Input::Keys::DOWN)) {
-		_player->_direction = 0;
-		_player->isFiring = true;
-		_player->noBullets++;
-		createBullet(elapsedTime);
-	}
-	else if (keyboardState->IsKeyDown(Input::Keys::RIGHT)) {
-		_player->_direction = 1;
-		_player->isFiring = true;
-		_player->noBullets++;
-		createBullet(elapsedTime);
-	}
-	else if (!keyboardState->IsKeyDown(Input::Keys::UP) && !keyboardState->IsKeyDown(Input::Keys::LEFT) && !keyboardState->IsKeyDown(Input::Keys::DOWN) && !keyboardState->IsKeyDown(Input::Keys::RIGHT)) {
-		_player->isFiring = false;		
-	}
+
+	
 
 	//Mouse
 	if (mouseState->LeftButton == Input::ButtonState::PRESSED) {
@@ -385,7 +425,7 @@ void GameInstance::Input(int elapsedTime, Input::KeyboardState* state, Input::Mo
 void GameInstance::updatingPlayer(int elapsedTime) {
 	_player->_currentFrameTime += elapsedTime;
 	
-	if (!_player->invincible && !_player->isFiring) {
+	if (!_player->_invincible && !_player->_isFiring) {
 		if (_player->_currentFrameTime > _cFrameTime) {
 
 			_player->_frame++;
@@ -397,7 +437,7 @@ void GameInstance::updatingPlayer(int elapsedTime) {
 			_player->_currentFrameTime = 0;
 		}
 	}
-	else if(_player->invincible)
+	else if(_player->_invincible)
 	{
 		if (_player->_currentFrameTime > _cFrameTime) {
 			
@@ -412,12 +452,12 @@ void GameInstance::updatingPlayer(int elapsedTime) {
 			_player->_currentFrameTime = 0.0f;
 			_player->_iCurrentFrameTime += 0.5;
 			if (_player->_iCurrentFrameTime >= 3.0f) {
-				_player->invincible = false;
+				_player->_invincible = false;
 				_player->_iCurrentFrameTime = 0;
 			}
 		}
 	}
-	else if (_player->isFiring) {
+	else if (_player->_isFiring) {
 		if (_player->_currentFrameTime > _cFrameTime) {
 
 
@@ -436,7 +476,7 @@ void GameInstance::updatingPlayer(int elapsedTime) {
 			}
 		}
 	}
-	else if (_player->dead) {
+	else if (_player->_dead) {
 		_player->_frame = 5;
 	}
 	
@@ -444,11 +484,11 @@ void GameInstance::updatingPlayer(int elapsedTime) {
 	
 
 	//changing the direction of the player
-	if (_player->isMoving || _player->invincible || _player->isFiring) {
+	if (_player->_isMoving || _player->_invincible || _player->_isFiring) {
 		_player->_sourceRect->X = _player->_sourceRect->Width * _player->_direction;
 		_player->_sourceRect->Y = _player->_sourceRect->Height * _player->_frame;
 	}
-	if (_player->dead) {
+	if (_player->_dead) {
 		_player->_sourceRect->X = _player->_sourceRect->Height * _player->_direction;
 		_player->_sourceRect->Y = _player->_sourceRect->Width * 5;
 	}
@@ -523,18 +563,18 @@ void GameInstance::updatingHeartCollectable(int elapsedTime) {
 }
 
 void GameInstance::updateSimpleEnemy(SimpleEnemy* ghost, int elapsedTime) {
-	if (ghost->direction == 0) {
-		ghost->position->X += ghost->speed * elapsedTime;
+	if (ghost->_direction == 0) {
+		ghost->_position->X += ghost->_speed * elapsedTime;
 	}
-	else if (ghost->direction == 1) {
-		ghost->position->X -= ghost->speed * elapsedTime;
+	else if (ghost->_direction == 1) {
+		ghost->_position->X -= ghost->_speed * elapsedTime;
 	}
 
-	if (ghost->position->X + ghost->sourceRect->Width >= Graphics::GetViewportWidth()) {
-		ghost->direction = 1;
+	if (ghost->_position->X + ghost->_sourceRect->Width >= Graphics::GetViewportWidth()) {
+		ghost->_direction = 1;
 	}
-	else if (ghost->position->X <= 0) {
-		ghost->direction = 0;
+	else if (ghost->_position->X <= 0) {
+		ghost->_direction = 0;
 	}
 }
 
@@ -549,19 +589,19 @@ void GameInstance::checkSimpleEnemyCollision() {
 	int enemyBottom = 0;
 	int enemyLeft = 0;
 
-	if (!_player->invincible) {
+	if (!_player->_invincible) {
 		for (int i = 0; i < SIMPLEENEMYCOUNT; i++) {
-			enemyTop = _ghost[i]->position->Y;
-			enemyRight = _ghost[i]->position->X + _ghost[i]->sourceRect->Width;
-			enemyBottom = _ghost[i]->position->Y + _ghost[i]->sourceRect->Height;
-			enemyLeft = _ghost[i]->position->X;
+			enemyTop = _ghost[i]->_position->Y;
+			enemyRight = _ghost[i]->_position->X + _ghost[i]->_sourceRect->Width;
+			enemyBottom = _ghost[i]->_position->Y + _ghost[i]->_sourceRect->Height;
+			enemyLeft = _ghost[i]->_position->X;
 
 			if ((playerBottom > enemyTop) && (playerTop < enemyBottom) && (playerLeft < enemyRight) && (playerRight > enemyLeft)) {
-				_player->health -= 1;
+				_player->_health -= 1;
 				_soundManager->Play(SoundManager::SOUND_NAMES::PLAYERHURT);
 				checkPlayerDead();				
 				i = SIMPLEENEMYCOUNT;
-				_player->invincible = true;
+				_player->_invincible = true;
 			}
 		}
 	}
@@ -588,7 +628,7 @@ void GameInstance::checkCollectableCollision() {
 
 		if ((playerBottom > collectableTop) && (playerTop < collectableBottom) && (playerLeft < collectableRight) && (playerRight > collectableLeft)) {
 			_collectable[i]->_position->Y = 1000;
-			_player->score += 100;
+			_player->_score += 100;
 			_soundManager->Play(SoundManager::SOUND_NAMES::COIN);
 		}
 	}
@@ -613,18 +653,18 @@ void GameInstance::checkHeartCollision() {
 
 		if ((playerBottom > heartTop) && (playerTop < heartBottom) && (playerLeft < heartRight) && (playerRight > heartLeft)) {
 			_heart[i]->_position->Y = 1000;
-			_player->health ++;
+			_player->_health ++;
 			_soundManager->Play(SoundManager::SOUND_NAMES::HEART);
 		}
 	}
 }
 
 void GameInstance::checkPlayerDead() {
-	if (_player->health < 1) {
-		_player->dead = true;
+	if (_player->_health < 1) {
+		_player->_dead = true;
 		_soundManager->Play(SoundManager::SOUND_NAMES::DEAD);
-		if (_player->health < 0) {
-			_player->health = 0;
+		if (_player->_health < 0) {
+			_player->_health = 0;
 		}
 	}
 	
@@ -647,129 +687,117 @@ void GameInstance::checkOverlapCollectable() {
 	
 	do{
 		
-		for (int i = 0; i < COLLECTABLECOUNT; i++) {
+		isOverlapping = false;
+
+		for (int i = 0; i < COLLECTABLECOUNT; i++) 
+		{
 			collectableTop = _collectable[i]->_position->Y;
 			collectableRight = _collectable[i]->_position->X + _collectable[i]->_rect->Width;
 			collectableBottom = _collectable[i]->_position->Y + _collectable[i]->_rect->Height;
 			collectableLeft = _collectable[i]->_position->X;
 
-			for (int j = 50; j < COLLECTABLECOUNT; j--) {
-				compareCollectableTop = _collectable[j]->_position->Y;
-				compareCollectableRight = _collectable[j]->_position->X + _collectable[j]->_rect->Width;
-				compareCollectableBottom = _collectable[j]->_position->Y + _collectable[j]->_rect->Height;
-				compareCollectableLeft = _collectable[j]->_position->X;
-			}
-			
-			
+			for (int j = 0; j < COLLECTABLECOUNT; j++) 
+			{
+				if (i != j)
+				{
+					compareCollectableTop = _collectable[j]->_position->Y;
+					compareCollectableRight = _collectable[j]->_position->X + _collectable[j]->_rect->Width;
+					compareCollectableBottom = _collectable[j]->_position->Y + _collectable[j]->_rect->Height;
+					compareCollectableLeft = _collectable[j]->_position->X;
 
-			if ((compareCollectableBottom > collectableTop) && (compareCollectableTop < collectableBottom) && (compareCollectableLeft < collectableRight) && (compareCollectableRight > collectableLeft)) {
-				_collectable[i]->_position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
-				isOverlapping = true;
+					if ((compareCollectableBottom > collectableTop) && (compareCollectableTop < collectableBottom) && (compareCollectableLeft < collectableRight) && (compareCollectableRight > collectableLeft)) 
+					{
+						_collectable[i]->_position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
+						isOverlapping = true;
+					}
+				}
 			}
-			else {
-				isOverlapping = false;
-			}
-
 		} 		
-		
 	}while (isOverlapping);
 }
 
 void GameInstance::createBullet(int elapsedTime) {
-	if (_player->noBullets >= 50){
-		_player->noBullets = 0;
+	if (_player->_bulletCount >= PROJECTILECOUNT){
+		_player->_bulletCount = 0;
 	}
 
-	for (int i = 0; i < _player->noBullets; i++) {
-		_projectile[i]->_position = new Vector2(_player->_position->X, _player->_position->Y);
-	}
-
-	
-	
-		
+	_projectile[_player->_bulletCount]->_position = new Vector2(_player->_position->X, _player->_position->Y);
+	_projectile[_player->_bulletCount]->_direction = _player->_direction;
+	_projectile[_player->_bulletCount]->_beenFired = true;
 }
 
 
 void GameInstance::updateBullet(Projectile* _bullet, int elapsedTime) {
 
-	if (_player->_direction == 0) {
-		_bullet->_position->Y += 1 * elapsedTime;
-		_bullet->beenFired = true;
-		/*Sleep(10);
-		_bullet->beenFired = false;*/
+	if (_bullet->_direction == 0) {
+		_bullet->_position->Y += 1 * elapsedTime;		
+		
 	}
-	else if (_player->_direction == 1) {
+	else if (_bullet->_direction == 1) {
 		_bullet->_position->X += 1 * elapsedTime;
-		_bullet->beenFired = true;
-		/*Sleep(10);
-		_bullet->beenFired = false;*/
+				
 	}
-	if (_player->_direction == 3) {
+	if (_bullet->_direction == 3) {
 		_bullet->_position->X -= 1 * elapsedTime;
-		_bullet->beenFired = true;
-		/*Sleep(10);
-		_bullet->beenFired = false;*/
+				
 	}
-	if (_player->_direction == 2) {
+	if (_bullet->_direction == 2) {
 		_bullet->_position->Y -= 1 * elapsedTime;
-		_bullet->beenFired = true;
-		/*Sleep(10);
-		_bullet->beenFired = false;*/
+				
 	}
-	/*_bullet->_position->Y += _bullet->speedY * elapsedTime;
-	_bullet->_position->Y += _bullet->speedX * elapsedTime;*/
-
-
-
-	//for (int i = 0; i < PROJECTILECOUNT; i++)
-	//{
-	//	if (_player->_direction == 0) {
-	//		/*_projectile[i]->_position = new Vector2(_player->_position->X, _player->_position->Y);*/
-	//		_projectile[i]->speedY = 1;
-	//		_projectile[i]->beenFired = true;
-	//	}
-	//	else if (_player->_direction == 1) {
-	//		/*_projectile[i]->_position = new Vector2(_player->_position->X, _player->_position->Y);*/
-	//		_projectile[i]->speedX = 1;
-	//		_projectile[i]->beenFired = true;
-	//	}
-	//	if (_player->_direction == 2) {
-	//		/*_projectile[i]->_position = new Vector2(_player->_position->X, _player->_position->Y);*/
-	//		_projectile[i]->speedY = -1;
-	//		_projectile[i]->beenFired = true;
-	//	}
-	//	if (_player->_direction == 3) {
-	//		/*_projectile[i]->_position = new Vector2(_player->_position->X, _player->_position->Y);*/
-	//		_projectile[i]->speedX = -1;
-	//		_projectile[i]->beenFired = true;
-	//	}
-	//}
+	
 }
 
 void GameInstance::bulletCollision() {
-	int playerTop = _player->_position->Y;
-	int playerRight = _player->_position->X + _player->_sourceRect->Width;
-	int playerBottom = _player->_position->Y + _player->_sourceRect->Height;
-	int playerLeft = _player->_position->X;
-
 	int bulletTop = 0;
 	int bulletRight = 0;
 	int bulletBottom = 0;
 	int bulletLeft = 0;
 
-	for (int i = 0; i < COLLECTABLECOUNT; i++) {
-		bulletTop = _collectable[i]->_position->Y;
-		bulletRight = _collectable[i]->_position->X + _collectable[i]->_rect->Width;
-		bulletBottom = _collectable[i]->_position->Y + _collectable[i]->_rect->Height;
-		bulletLeft = _collectable[i]->_position->X;
+	int enemyTop = 0;
+	int enemyRight = 0;
+	int enemyBottom = 0;
+	int enemyLeft = 0;
 
-		if ((playerBottom > bulletTop) && (playerTop < bulletBottom) && (playerLeft < bulletRight) && (playerRight > bulletLeft)) {
-			_collectable[i]->_position->Y = 1000;
-			_player->score += 100;
+	
 			
+
+		for (int i = 0; i < SIMPLEENEMYCOUNT; i++)
+		{
+			enemyTop = _ghost[i]->_position->Y;
+			enemyRight = _ghost[i]->_position->X + _ghost[i]->_sourceRect->Width;
+			enemyBottom = _ghost[i]->_position->Y + _ghost[i]->_sourceRect->Height;
+			enemyLeft = _ghost[i]->_position->X;
+
+			for (int j = 0; j < PROJECTILECOUNT; j++)
+			{
+				if (_projectile[j]->_beenFired)
+				{
+					bulletTop = _projectile[j]->_position->Y;
+					bulletRight = _projectile[j]->_position->X + _projectile[j]->_sourceRect->Width;
+					bulletBottom = _projectile[j]->_position->Y + _projectile[j]->_sourceRect->Height;
+					bulletLeft = _projectile[j]->_position->X;
+
+					if ((bulletBottom > enemyTop) && (bulletTop < enemyBottom) && (bulletLeft < enemyRight) && (bulletRight > enemyLeft))
+					{
+						_projectile[j]->_beenFired = false;
+						_projectile[j]->_position = new Vector2(100000, 100000);
+						_ghost[i]->_health--;
+						_soundManager->Play(SoundManager::SOUND_NAMES::ENEMYHURT);
+						if (_ghost[i]->_health <= 0) {
+							_ghost[i]->_position = new Vector2(10000, 100000);
+							_player->_score += 350;
+						}
+						
+						
+					}
+				}
+			}
 		}
-	}
+	
 }
+
+
 
 void gameOver() {
 
