@@ -30,8 +30,14 @@ GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0
 	_player->invincible = false;
 	_player->isFiring = false;
 	
+	_mainMenu = new MainMenu();
+	_mainMenu->_start = true;
 	
-	
+
+	_pauseMenu = new PauseMenu();
+	_pauseMenu->_paused = false;
+	_pauseMenu->_pKeyDown = false;
+
 	
 	for (int i = 0; i < PROJECTILECOUNT; i++) {
 	_projectile[i] = new Projectile();	
@@ -47,10 +53,7 @@ GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0
 		_ghost[i]->direction = 0;
 		_ghost[i]->speed = 0.2f;
 	}
-
-	_paused = false;
-	_pKeyDown = false;
-	_start = true;
+	
 
 	_player->_frame = 0;
 	_player->_currentFrameTime = 0;
@@ -116,12 +119,12 @@ GameInstance::~GameInstance()
 		delete _ghost[i];
 	}
 
-	delete _menuBackground;
-	delete _menuRectangle;
-	delete _menuStringPosition;
-	delete _mainMenuBackground;
-	delete _mainMenuRectangle;
-	delete _mainMenuStringPosition;
+	delete _pauseMenu->_menuBackground;
+	delete _pauseMenu->_menuRectangle;
+	delete _pauseMenu->_menuStringPosition;
+	delete _mainMenu->_mainMenuBackground;
+	delete _mainMenu->_mainMenuRectangle;
+	delete _mainMenu->_mainMenuStringPosition;
 }
 
 void GameInstance::LoadContent()
@@ -199,22 +202,22 @@ void GameInstance::LoadContent()
 	_stringPosition = new Vector2(10.0f, 25.0f);
 
 	// Pause Menu
-	_menuBackground = new Texture2D();
+	_pauseMenu->_menuBackground = new Texture2D();
 
-	_menuBackground->Load("Textures/Transparency.png", false);
+	_pauseMenu->_menuBackground->Load("Textures/Transparency.png", false);
 
-	_menuRectangle = new Rect(0.0f, 0.0f, Graphics::GetViewportWidth(), Graphics::GetViewportHeight());
+	_pauseMenu->_menuRectangle = new Rect(0.0f, 0.0f, Graphics::GetViewportWidth(), Graphics::GetViewportHeight());
 
-	_menuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.0f, Graphics::GetViewportHeight() / 2.0f);
+	_pauseMenu->_menuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.0f, Graphics::GetViewportHeight() / 2.0f);
 
 	//Main Menu
-	_mainMenuBackground = new Texture2D();
+	_mainMenu->_mainMenuBackground = new Texture2D();
 
-	_mainMenuBackground->Load("Textures/Transparency.png", false);
+	_mainMenu->_mainMenuBackground->Load("Textures/Transparency.png", false);
 
-	_mainMenuRectangle = new Rect(0.0f, 0.0f, Graphics::GetViewportWidth(), Graphics::GetViewportHeight());
+	_mainMenu->_mainMenuRectangle = new Rect(0.0f, 0.0f, Graphics::GetViewportWidth(), Graphics::GetViewportHeight());
 
-	_mainMenuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.0f, Graphics::GetViewportHeight() / 2.0f);
+	_mainMenu->_mainMenuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.0f, Graphics::GetViewportHeight() / 2.0f);
 }
 
 void GameInstance::Update(int elapsedTime)
@@ -224,21 +227,21 @@ void GameInstance::Update(int elapsedTime)
 	Input::MouseState* mouseState = Input::Mouse::GetState();
 
 	if (keyboardState->IsKeyDown(Input::Keys::SPACE)) {
-		_start = false;
+		_mainMenu->_start = false;
 	}
 
-	if (!_start) {
+	if (!_mainMenu->_start) {
 
 
-		if (keyboardState->IsKeyDown(Input::Keys::P) && !_pKeyDown) {
-			_pKeyDown = true;
-			_paused = !_paused;
+		if (keyboardState->IsKeyDown(Input::Keys::P) && !_pauseMenu->_pKeyDown) {
+			_pauseMenu->_pKeyDown = true;
+			_pauseMenu->_paused = !_pauseMenu->_paused;
 		}
 
 		if (keyboardState->IsKeyUp(Input::Keys::P)) {
-			_pKeyDown = false;
+			_pauseMenu->_pKeyDown = false;
 		}
-		if (!_paused) {
+		if (!_pauseMenu->_paused) {
 			if (!_player->dead) {
 				Input(elapsedTime, keyboardState, mouseState);				
 			}			
@@ -292,19 +295,19 @@ void GameInstance::Draw(int elapsedTime)
 	SpriteBatch::DrawString(stream.str().c_str(), _stringPosition, Color::Green);
 
 	// Pause menu
-	if (_paused) {
+	if (_pauseMenu->_paused) {
 		std::stringstream menuStream;
 		menuStream << "Paused!";
 
-		SpriteBatch::Draw(_menuBackground, _menuRectangle, nullptr);
-		SpriteBatch::DrawString(menuStream.str().c_str(), _menuStringPosition, Color::Red);
+		SpriteBatch::Draw(_pauseMenu->_menuBackground, _pauseMenu->_menuRectangle, nullptr);
+		SpriteBatch::DrawString(menuStream.str().c_str(), _pauseMenu->_menuStringPosition, Color::Red);
 	}
-	if (_start) {
+	if (_mainMenu->_start) {
 		std::stringstream menuStream;
 		menuStream << "Press Spacebar to begin";
 
-		SpriteBatch::Draw(_menuBackground, _menuRectangle, nullptr);
-		SpriteBatch::DrawString(menuStream.str().c_str(), _menuStringPosition, Color::Red);
+		SpriteBatch::Draw(_pauseMenu->_menuBackground, _pauseMenu->_menuRectangle, nullptr);
+		SpriteBatch::DrawString(menuStream.str().c_str(), _pauseMenu->_menuStringPosition, Color::Red);
 	}
 
 	SpriteBatch::EndDraw(); // Ends Drawing
@@ -318,10 +321,10 @@ void GameInstance::Input(int elapsedTime, Input::KeyboardState* state, Input::Mo
 
 	//Sprint
 	if (keyboardState->IsKeyDown(Input::Keys::LEFTSHIFT)) {
-		_player->speedMultiplier = 5.0f;
+		_player->speedMultiplier = 4.0f;
 	}
 	else {
-		_player->speedMultiplier = 1.0f;
+		_player->speedMultiplier = 2.0f;
 	}
 
 	// Keyboard
@@ -381,7 +384,7 @@ void GameInstance::Input(int elapsedTime, Input::KeyboardState* state, Input::Mo
 
 	//Mouse
 	if (mouseState->LeftButton == Input::ButtonState::PRESSED) {
-		//change to attack
+		//
 		/*_collectable->_position->X = mouseState->X;
 		_collectable->_position->Y = mouseState->Y;*/
 	}
@@ -445,23 +448,8 @@ void GameInstance::updatingPlayer(int elapsedTime) {
 		_player->_frame = 5;
 	}
 	
-
-	//crossing offscreen
-	if (_player->_position->X + _player->_sourceRect->Width > Graphics::GetViewportWidth()) {
-		_player->_position->X = 0 * Graphics::GetViewportWidth();
-	}
-	//left
-	if (_player->_position->X < 0 * Graphics::GetViewportWidth()) {
-		_player->_position->X = Graphics::GetViewportWidth() - _player->_sourceRect->Width;
-	}
-	//up
-	if (_player->_position->Y < 0 * Graphics::GetViewportHeight()) {
-		_player->_position->Y = Graphics::GetViewportHeight() - _player->_sourceRect->Height;
-	}
-	//down
-	if (_player->_position->Y + _player->_sourceRect->Height > Graphics::GetViewportHeight()) {
-		_player->_position->Y = 0 * Graphics::GetViewportHeight();
-	}
+	CheckPlayerWallCollison();
+	
 
 	//changing the direction of the player
 	if (_player->isMoving || _player->invincible || _player->isFiring) {
@@ -473,6 +461,25 @@ void GameInstance::updatingPlayer(int elapsedTime) {
 		_player->_sourceRect->Y = _player->_sourceRect->Width * 5;
 	}
 	
+}
+
+void GameInstance::CheckPlayerWallCollison() {
+	
+	if (_player->_position->X + _player->_sourceRect->Width > Graphics::GetViewportWidth()) {
+		_player->_position->X = Graphics::GetViewportWidth() - _player->_sourceRect->Width;
+	}
+
+	if (_player->_position->X < 0) {
+		_player->_position->X = 0;
+	}
+
+	if (_player->_position->Y < 0) {
+		_player->_position->Y = 0;
+	}
+
+	if (_player->_position->Y + _player->_sourceRect->Height > Graphics::GetViewportHeight()) {
+		_player->_position->Y = Graphics::GetViewportHeight() - _player->_sourceRect->Height;
+	}
 }
 
 void GameInstance::updatingCollectable(int elapsedTime) {
@@ -744,4 +751,33 @@ void GameInstance::updateBullet(Projectile* _bullet, int elapsedTime) {
 	//		_projectile[i]->beenFired = true;
 	//	}
 	//}
+}
+
+void GameInstance::bulletCollision() {
+	int playerTop = _player->_position->Y;
+	int playerRight = _player->_position->X + _player->_sourceRect->Width;
+	int playerBottom = _player->_position->Y + _player->_sourceRect->Height;
+	int playerLeft = _player->_position->X;
+
+	int bulletTop = 0;
+	int bulletRight = 0;
+	int bulletBottom = 0;
+	int bulletLeft = 0;
+
+	for (int i = 0; i < COLLECTABLECOUNT; i++) {
+		bulletTop = _collectable[i]->_position->Y;
+		bulletRight = _collectable[i]->_position->X + _collectable[i]->_rect->Width;
+		bulletBottom = _collectable[i]->_position->Y + _collectable[i]->_rect->Height;
+		bulletLeft = _collectable[i]->_position->X;
+
+		if ((playerBottom > bulletTop) && (playerTop < bulletBottom) && (playerLeft < bulletRight) && (playerRight > bulletLeft)) {
+			_collectable[i]->_position->Y = 1000;
+			_player->score += 100;
+			
+		}
+	}
+}
+
+void gameOver() {
+
 }

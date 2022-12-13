@@ -92,6 +92,21 @@ struct SoundManager
 	SoundEffect* _gunShot;
 };
 
+struct MainMenu {
+	Texture2D* _mainMenuBackground;
+	Rect* _mainMenuRectangle;
+	Vector2* _mainMenuStringPosition;
+	bool _start;
+};
+
+struct PauseMenu {
+	Texture2D* _menuBackground;
+	Rect* _menuRectangle;
+	Vector2* _menuStringPosition;
+	bool _paused;
+	bool _pKeyDown;
+};
+
 
 
 // Declares the Pacman class which inherits from the Game class.
@@ -106,6 +121,9 @@ private:
 	Collectable* _heart[HEARTCOUNT];
 	SimpleEnemy* _ghost[SIMPLEENEMYCOUNT];
 	Projectile* _projectile[PROJECTILECOUNT];
+	MainMenu* _mainMenu;
+	PauseMenu* _pauseMenu;
+
 
 	const float _cSpeed;
 	const int _cFrameTime;
@@ -118,17 +136,10 @@ private:
 	Vector2* _stringPosition;
 
 	//Data for Menu
-	Texture2D* _menuBackground;
-	Rect* _menuRectangle;
-	Vector2* _menuStringPosition;
-	bool _paused;
-	bool _pKeyDown;
+	
 
 	//Data for MainMenu
-	Texture2D* _mainMenuBackground;
-	Rect* _mainMenuRectangle;
-	Vector2* _mainMenuStringPosition;
-	bool _start;
+	
 
 	SoundManager* _soundManager;
 	
@@ -154,6 +165,8 @@ private:
 
 	void updatingPlayer(int elapsedTime);
 
+	void CheckPlayerWallCollison();
+
 	void updatingCollectable(int elapsedTime);
 
 	void checkCollectableCollision();
@@ -173,4 +186,8 @@ private:
 	void createBullet(int elapsedTime);
 
 	void updateBullet(Projectile*, int elapsedTime);
+
+	void bulletCollision();
+
+	void gameOver();
 };
