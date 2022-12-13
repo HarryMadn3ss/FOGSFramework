@@ -59,13 +59,10 @@ GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0
 	_player->_currentFrameTime = 0;
 	_player->speedMultiplier = 1.0f;
 
-	_soundManager = new SoundManager;	
-	_soundManager->_coin = new SoundEffect;
-	_soundManager->_gunShot = new SoundEffect;
-	_soundManager->_playerHurt = new SoundEffect;
-	_soundManager->_dead = new SoundEffect;
-	_soundManager->_enemyHurt = new SoundEffect;
-	_soundManager->_heart = new SoundEffect;
+
+	
+	_soundManager = new SoundManager;	//initialise all sounds in the SoundManager struct
+	
 
 	//Initialise important Game aspects
 	Audio::Initialise();
@@ -191,12 +188,7 @@ void GameInstance::LoadContent()
 	}
 
 	//load Audio
-	_soundManager->_coin->Load("Audio/coin.wav");
-	_soundManager->_dead->Load("Audio/dead.wav");
-	_soundManager->_enemyHurt->Load("Audio/enemyHurt.wav");
-	_soundManager->_gunShot->Load("Audio/gunShot.wav");
-	_soundManager->_playerHurt->Load("Audio/playerHurt.wav");
-	_soundManager->_heart->Load("Audio/heart.wav");
+	_soundManager->Load();
 
 	// Set string position
 	_stringPosition = new Vector2(10.0f, 25.0f);
@@ -430,7 +422,7 @@ void GameInstance::updatingPlayer(int elapsedTime) {
 
 
 			_player->_frame += 3;
-			Audio::Play(_soundManager->_gunShot);
+			_soundManager->Play(SoundManager::SOUND_NAMES::GUNSHOT);
 
 			if (_player->_frame >= 4)
 			{
@@ -566,8 +558,9 @@ void GameInstance::checkSimpleEnemyCollision() {
 
 			if ((playerBottom > enemyTop) && (playerTop < enemyBottom) && (playerLeft < enemyRight) && (playerRight > enemyLeft)) {
 				_player->health -= 1;
-				Audio::Play(_soundManager->_enemyHurt);
-				checkPlayerDead();				i = SIMPLEENEMYCOUNT;
+				_soundManager->Play(SoundManager::SOUND_NAMES::PLAYERHURT);
+				checkPlayerDead();				
+				i = SIMPLEENEMYCOUNT;
 				_player->invincible = true;
 			}
 		}
@@ -596,7 +589,7 @@ void GameInstance::checkCollectableCollision() {
 		if ((playerBottom > collectableTop) && (playerTop < collectableBottom) && (playerLeft < collectableRight) && (playerRight > collectableLeft)) {
 			_collectable[i]->_position->Y = 1000;
 			_player->score += 100;
-			Audio::Play(_soundManager->_coin);
+			_soundManager->Play(SoundManager::SOUND_NAMES::COIN);
 		}
 	}
 }
@@ -621,7 +614,7 @@ void GameInstance::checkHeartCollision() {
 		if ((playerBottom > heartTop) && (playerTop < heartBottom) && (playerLeft < heartRight) && (playerRight > heartLeft)) {
 			_heart[i]->_position->Y = 1000;
 			_player->health ++;
-			Audio::Play(_soundManager->_heart);
+			_soundManager->Play(SoundManager::SOUND_NAMES::HEART);
 		}
 	}
 }
@@ -629,7 +622,7 @@ void GameInstance::checkHeartCollision() {
 void GameInstance::checkPlayerDead() {
 	if (_player->health < 1) {
 		_player->dead = true;
-		Audio::Play(_soundManager->_dead);
+		_soundManager->Play(SoundManager::SOUND_NAMES::DEAD);
 		if (_player->health < 0) {
 			_player->health = 0;
 		}

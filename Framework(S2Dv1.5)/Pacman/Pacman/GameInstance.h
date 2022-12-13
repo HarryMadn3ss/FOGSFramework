@@ -79,8 +79,12 @@ struct SimpleEnemy
 	float speed;
 };
 
+
 struct SoundManager 
 {
+	enum SOUND_NAMES{ COIN, HEART, PLAYERHURT, DEAD, ENEMYHURT, GUNSHOT};
+
+
 	SoundEffect* _coin;
 	SoundEffect* _heart;
 
@@ -90,6 +94,48 @@ struct SoundManager
 	SoundEffect* _enemyHurt;
 
 	SoundEffect* _gunShot;
+
+	SoundManager() {
+		_coin = new SoundEffect;
+		_gunShot = new SoundEffect;
+		_playerHurt = new SoundEffect;
+		_dead = new SoundEffect;
+		_enemyHurt = new SoundEffect;
+		_heart = new SoundEffect;
+	};
+
+	void Load() {
+		_coin->Load("Audio/coin.wav");
+		_dead->Load("Audio/dead.wav");
+		_enemyHurt->Load("Audio/enemyHurt.wav");
+		_gunShot->Load("Audio/gunShot.wav");
+		_playerHurt->Load("Audio/playerHurt.wav");
+		_heart->Load("Audio/heart.wav");
+	};
+
+	void Play(SOUND_NAMES soundEffect) {
+		switch (soundEffect) {
+		case COIN:
+			Audio::Play(_coin);
+			break;
+		case HEART:
+			Audio::Play(_heart);
+			break;
+		case PLAYERHURT:
+			Audio::Play(_playerHurt);
+			break;
+		case DEAD:
+			Audio::Play(_dead);
+			break;
+		case ENEMYHURT:
+			Audio::Play(_enemyHurt);
+			break;
+		case GUNSHOT:
+			Audio::Play(_gunShot);
+			break;
+		}
+	}
+
 };
 
 struct MainMenu {
