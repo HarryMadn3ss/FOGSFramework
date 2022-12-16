@@ -47,6 +47,7 @@ struct Player
 	bool _isFiring;
 	bool _invincible;
 	
+	
 };
 
 struct Projectile {
@@ -263,8 +264,12 @@ private:
 	Enemy* _enemy[ENEMYCOUNT];
 	Projectile* _projectile[PROJECTILECOUNT];
 	MainMenu* _mainMenu;
+	MainMenu* _gameOverScreen;
 	PauseMenu* _pauseMenu;
 	Background* _background;
+
+	bool quit;
+	bool restart;
 
 	float gameRunTime;
 	float timeSinceSpawn = 0;
@@ -336,4 +341,6 @@ private:
 	void BulletCollision();
 
 	void GameOver();
+
+	
 };

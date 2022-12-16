@@ -7,79 +7,90 @@
 using namespace std;
 
 GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0.1f), _cFrameTime(250), _cCollectableFrameTime(500), _cProjectileFrameTime(500)
-{
+{ 
+	quit = false;
 
-	for (int i = 0; i < COLLECTABLECOUNT; i++)
-	{
-		_collectable[i] = new Collectable();
-		_collectable[i]->_frame = 0;
-		_collectable[i]->_currentFrameTime = 0;
+	while (!quit) {
+		restart = false;
+
+		while (!quit && !restart) {
+
+			for (int i = 0; i < COLLECTABLECOUNT; i++)
+			{
+				_collectable[i] = new Collectable();
+				_collectable[i]->_frame = 0;
+				_collectable[i]->_currentFrameTime = 0;
+			}
+
+			for (int i = 0; i < HEARTCOUNT; i++)
+			{
+				_heart[i] = new Collectable();
+				_heart[i]->_frame = 0;
+				_heart[i]->_currentFrameTime = 0;
+			}
+
+			_player = new Player();
+			_player->_dead = false;
+			_player->_score = 0;
+			_player->_health = 3;
+			_player->_invincible = false;
+			_player->_isFiring = false;
+			_player->_cooldownBetShot = 500;
+
+			_mainMenu = new MainMenu();
+			_mainMenu->_start = true;
+
+			_gameOverScreen = new MainMenu();
+
+			_background = new Background;
+			_background->_texture = new Texture2D();
+
+
+			_pauseMenu = new PauseMenu();
+			_pauseMenu->_paused = false;
+			_pauseMenu->_pKeyDown = false;
+
+
+			for (int i = 0; i < PROJECTILECOUNT; i++) {
+				_projectile[i] = new Projectile();
+				_projectile[i]->_frame = 0;
+				_projectile[i]->_currentFrame = 0;
+			}
+
+
+
+			for (int i = 0; i < ENEMYCOUNT; i++)
+			{
+				_enemy[i] = new ChasingEnemy();
+				_enemy[i]->_direction = 0;
+				_enemy[i]->_speed = 0.1f;
+				_enemy[i]->_health = 2;
+				_enemy[i]->_rotation = 0;
+				_enemy[i]->_scale = 1;
+				_enemy[i]->_color = new Color(1, 1, 1, 1);
+				_enemy[i]->_origin = new Vector2(32, 32);
+			}
+
+
+			_player->_frame = 0;
+			_player->_currentFrameTime = 0;
+			_player->_speedMultiplier = 1.0f;
+
+
+
+			_soundManager = new SoundManager;	//initialise all sounds in the SoundManager struct
+
+
+			//Initialise important Game aspects
+			Audio::Initialise();
+			Graphics::Initialise(argc, argv, this, 1024, 768, false, 25, 25, "Cold Circle London", 60);
+			Input::Initialise();
+
+			// Start the Game Loop - This calls Update and Draw in game loop
+			Graphics::StartGameLoop();
+			restart = true;
+		}
 	}
-
-	for (int i = 0; i < HEARTCOUNT; i++)
-	{
-		_heart[i] = new Collectable();
-		_heart[i]->_frame = 0;
-		_heart[i]->_currentFrameTime = 0;
-	}
-
-	_player = new Player();
-	_player->_dead = false;
-	_player->_score = 0;
-	_player->_health = 3;
-	_player->_invincible = false;
-	_player->_isFiring = false;
-	_player->_cooldownBetShot = 500;
-	
-	_mainMenu = new MainMenu();
-	_mainMenu->_start = true;
-
-	_background = new Background;
-	_background->_texture = new Texture2D();
-	
-
-	_pauseMenu = new PauseMenu();
-	_pauseMenu->_paused = false;
-	_pauseMenu->_pKeyDown = false;
-
-	
-	for (int i = 0; i < PROJECTILECOUNT; i++) {
-	_projectile[i] = new Projectile();	
-	_projectile[i]->_frame = 0;
-	_projectile[i]->_currentFrame = 0;
-	}
-
-	
-	
-	for (int i = 0; i < ENEMYCOUNT; i++)
-	{
-		_enemy[i] = new ChasingEnemy();
-		_enemy[i]->_direction = 0;
-		_enemy[i]->_speed = 0.1f;
-		_enemy[i]->_health = 2;
-		_enemy[i]->_rotation = 0;
-		_enemy[i]->_scale = 1;
-		_enemy[i]->_color = new Color(1, 1, 1, 1);
-		_enemy[i]->_origin = new Vector2(32, 32);
-	}
-	
-
-	_player->_frame = 0;
-	_player->_currentFrameTime = 0;
-	_player->_speedMultiplier = 1.0f;
-
-
-	
-	_soundManager = new SoundManager;	//initialise all sounds in the SoundManager struct
-	
-
-	//Initialise important Game aspects
-	Audio::Initialise();
-	Graphics::Initialise(argc, argv, this, 1024, 768, false, 25, 25, "Cold Circle London", 60);
-	Input::Initialise();
-
-	// Start the Game Loop - This calls Update and Draw in game loop
-	Graphics::StartGameLoop();
 }
 
 GameInstance::~GameInstance()
@@ -147,6 +158,11 @@ GameInstance::~GameInstance()
 	delete _background->_sourceRect;
 	delete _background->_texture;
 	_background = nullptr;
+	delete _gameOverScreen->_mainMenuBackground;
+	delete _gameOverScreen->_mainMenuRectangle;
+	delete _gameOverScreen->_mainMenuStringPosition;
+	delete _gameOverScreen;
+	_gameOverScreen = nullptr;
 }
 
 void GameInstance::LoadContent()
@@ -221,20 +237,25 @@ void GameInstance::LoadContent()
 	// Pause Menu
 	_pauseMenu->_menuBackground = new Texture2D();
 
-	_pauseMenu->_menuBackground->Load("Textures/Transparency.png", false);
+	_pauseMenu->_menuBackground->Load("Textures/pauseMenu.png", false);
 
 	_pauseMenu->_menuRectangle = new Rect(0.0f, 0.0f, Graphics::GetViewportWidth(), Graphics::GetViewportHeight());
 
-	_pauseMenu->_menuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.0f, Graphics::GetViewportHeight() / 2.0f);
+	/*_pauseMenu->_menuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.0f, Graphics::GetViewportHeight() / 2.0f);*/
 
 	//Main Menu
 	_mainMenu->_mainMenuBackground = new Texture2D();
 
-	_mainMenu->_mainMenuBackground->Load("Textures/Transparency.png", false);
+	_mainMenu->_mainMenuBackground->Load("Textures/mainMenu.png", false);
 
 	_mainMenu->_mainMenuRectangle = new Rect(0.0f, 0.0f, Graphics::GetViewportWidth(), Graphics::GetViewportHeight());
 
-	_mainMenu->_mainMenuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.0f, Graphics::GetViewportHeight() / 2.0f);
+	/*_mainMenu->_mainMenuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.0f, Graphics::GetViewportHeight() / 2.0f);*/
+
+	//gameOverSCreeen
+	_gameOverScreen->_mainMenuBackground = new Texture2D();
+	_gameOverScreen->_mainMenuBackground->Load("Textures/endMenu.png", false);
+	_gameOverScreen->_mainMenuRectangle = new Rect(0.0f, 0.0f, Graphics::GetViewportWidth(), Graphics::GetViewportHeight());
 
 	//background
 	_background->_sourceRect = new Rect(0.0f, 0.0f, Graphics::GetViewportWidth(), Graphics::GetViewportHeight());
@@ -244,7 +265,7 @@ void GameInstance::LoadContent()
 void GameInstance::Update(int elapsedTime)
 {
 
-	if (!_mainMenu->_start) {
+	if (!_mainMenu->_start && !_pauseMenu->_paused && !gameOver) {
 		gameRunTime += static_cast<float>(elapsedTime) / 1000;
 		timeSinceSpawn += static_cast<float>(elapsedTime) / 1000;
 
@@ -272,40 +293,50 @@ void GameInstance::Update(int elapsedTime)
 	if (keyboardState->IsKeyDown(Input::Keys::SPACE)) {
 		_mainMenu->_start = false;
 	}
-
+	if (gameOver) {
+		if (keyboardState->IsKeyDown(Input::Keys::L)) {
+			restart = false;			
+		}
+		else if (keyboardState->IsKeyDown(Input::Keys::ESCAPE)) {
+			quit = true;
+		}
+	}
 	if (!_mainMenu->_start) {
+		UpdatingPlayer(elapsedTime);
+		if (!gameOver) {
 
 
-		if (keyboardState->IsKeyDown(Input::Keys::P) && !_pauseMenu->_pKeyDown) {
-			_pauseMenu->_pKeyDown = true;
-			_pauseMenu->_paused = !_pauseMenu->_paused;
-		}
-
-		if (keyboardState->IsKeyUp(Input::Keys::P)) {
-			_pauseMenu->_pKeyDown = false;
-		}
-		if (!_pauseMenu->_paused) {
-			if (!_player->_dead) {
-				Input(elapsedTime, keyboardState, mouseState);				
-			}			
-			UpdatingPlayer(elapsedTime);
-			UpdatingCollectable(elapsedTime);
-
-			for(int i = 0; i < ENEMYCOUNT; i++)
-			{
-				_enemy[i]->updateEnemy(_player, elapsedTime);
+			if (keyboardState->IsKeyDown(Input::Keys::P) && !_pauseMenu->_pKeyDown) {
+				_pauseMenu->_pKeyDown = true;
+				_pauseMenu->_paused = !_pauseMenu->_paused;
 			}
 
-			
-			CheckSimpleEnemyCollision();
-			CheckCollectableCollision();
-			UpdatingHeartCollectable(elapsedTime);
-			CheckHeartCollision();
-			BulletCollision();
-			for (int i = 0; i < PROJECTILECOUNT; i++) {
-				UpdateBullet(_projectile[i], elapsedTime);
+			if (keyboardState->IsKeyUp(Input::Keys::P)) {
+				_pauseMenu->_pKeyDown = false;
 			}
-			
+			if (!_pauseMenu->_paused) {
+				if (!_player->_dead) {
+					Input(elapsedTime, keyboardState, mouseState);
+				}
+
+				UpdatingCollectable(elapsedTime);
+
+				for (int i = 0; i < ENEMYCOUNT; i++)
+				{
+					_enemy[i]->updateEnemy(_player, elapsedTime);
+				}
+
+
+				CheckSimpleEnemyCollision();
+				CheckCollectableCollision();
+				UpdatingHeartCollectable(elapsedTime);
+				CheckHeartCollision();
+				BulletCollision();
+				for (int i = 0; i < PROJECTILECOUNT; i++) {
+					UpdateBullet(_projectile[i], elapsedTime);
+				}
+
+			}
 		}
 	}
 }
@@ -314,7 +345,7 @@ void GameInstance::Draw(int elapsedTime)
 {
 	// player coords
 	std::stringstream stream;
-	stream << "Player X: " << _player->_position->X << " Y: " << _player->_position->Y << " Player Score: " << _player->_score << " Player Health: " << _player->_health;
+	stream << " Player Health: " << _player->_health << "Player Score: " << _player->_score;
 
 	SpriteBatch::BeginDraw(); // Starts Drawing
 
@@ -347,18 +378,21 @@ void GameInstance::Draw(int elapsedTime)
 
 	// Pause menu
 	if (_pauseMenu->_paused) {
-		std::stringstream menuStream;
-		menuStream << "Paused!";
+		/*std::stringstream menuStream;
+		menuStream << "Paused!";*/
 
 		SpriteBatch::Draw(_pauseMenu->_menuBackground, _pauseMenu->_menuRectangle, nullptr);
-		SpriteBatch::DrawString(menuStream.str().c_str(), _pauseMenu->_menuStringPosition, Color::Red);
+		/*SpriteBatch::DrawString(menuStream.str().c_str(), _pauseMenu->_menuStringPosition, Color::Red);*/
 	}
 	if (_mainMenu->_start) {
-		std::stringstream menuStream;
-		menuStream << "Press Spacebar to begin";
+		/*std::stringstream menuStream;
+		menuStream << "Press Spacebar to begin";*/
 
-		SpriteBatch::Draw(_pauseMenu->_menuBackground, _pauseMenu->_menuRectangle, nullptr);
-		SpriteBatch::DrawString(menuStream.str().c_str(), _pauseMenu->_menuStringPosition, Color::Red);
+		SpriteBatch::Draw(_mainMenu->_mainMenuBackground, _mainMenu->_mainMenuRectangle, nullptr);
+		/*SpriteBatch::DrawString(menuStream.str().c_str(), _pauseMenu->_menuStringPosition, Color::Red);*/
+	}
+	if (gameOver) {
+		SpriteBatch::Draw(_gameOverScreen->_mainMenuBackground, _gameOverScreen->_mainMenuRectangle, nullptr);
 	}
 
 	
@@ -405,16 +439,7 @@ void GameInstance::Input(int elapsedTime, Input::KeyboardState* state, Input::Mo
 	}
 	if (!keyboardState->IsKeyDown(Input::Keys::W) && !keyboardState->IsKeyDown(Input::Keys::A) && !keyboardState->IsKeyDown(Input::Keys::S) && !keyboardState->IsKeyDown(Input::Keys::D)) {
 		_player->_isMoving = false;
-	}
-		
-	//_player->_firingCooldown = 0;
-	//while (_player->_firingCooldown != 0)
-	//{
-	//	_player->_firingCooldown++;
-	//	if (_player->_firingCooldown >= 10) {
-	//		_player->_firingCooldown = 0;
-	//	}
-	//}
+	}	
 
 	if (_player->_firingCooldown > 0)
 	{		
@@ -469,15 +494,7 @@ void GameInstance::Input(int elapsedTime, Input::KeyboardState* state, Input::Mo
 			_player->_isFiring = false;		
 		}
 	}
-
-	
-
-	//Mouse
-	if (mouseState->LeftButton == Input::ButtonState::PRESSED) {
-		//
-		/*_collectable->_position->X = mouseState->X;
-		_collectable->_position->Y = mouseState->Y;*/
-	}
+		
 }
 
 void GameInstance::UpdatingPlayer(int elapsedTime) {
@@ -620,21 +637,6 @@ void GameInstance::UpdatingHeartCollectable(int elapsedTime) {
 	}
 }
 
-//void GameInstance::updateEnemy(Enemy* ghost, int elapsedTime) {
-//	if (ghost->_direction == 0) {
-//		ghost->_position->X += ghost->_speed * elapsedTime;
-//	}
-//	else if (ghost->_direction == 1) {
-//		ghost->_position->X -= ghost->_speed * elapsedTime;
-//	}
-//
-//	if (ghost->_position->X + ghost->_sourceRect->Width >= Graphics::GetViewportWidth()) {
-//		ghost->_direction = 1;
-//	}
-//	else if (ghost->_position->X <= 0) {
-//		ghost->_direction = 0;
-//	}
-//}
 
 void GameInstance::CheckSimpleEnemyCollision() {
 	int playerTop = _player->_position->Y;
@@ -719,12 +721,12 @@ void GameInstance::CheckHeartCollision() {
 
 void GameInstance::CheckPlayerDead() {
 	if (_player->_health < 1) {
-		_player->_dead = true;
-		GameOver();
+		_player->_dead = true;		
 		_soundManager->Play(SoundManager::SOUND_NAMES::DEAD);
 		if (_player->_health < 0) {
 			_player->_health = 0;
-		}
+		}		
+		GameOver();
 	}
 	
 }
@@ -858,6 +860,8 @@ void GameInstance::BulletCollision() {
 
 
 
-void GameInstance::GameOver() {
+void GameInstance::GameOver() {	
+	Sleep(2000);
 	gameOver = true;
 }
+
