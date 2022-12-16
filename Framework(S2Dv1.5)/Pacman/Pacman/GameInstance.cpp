@@ -345,7 +345,7 @@ void GameInstance::Draw(int elapsedTime)
 {
 	// player coords
 	std::stringstream stream;
-	stream << " Player Health: " << _player->_health << "Player Score: " << _player->_score;
+	stream << "Health: " << _player->_health << " Score: " << _player->_score;
 
 	SpriteBatch::BeginDraw(); // Starts Drawing
 
@@ -378,18 +378,13 @@ void GameInstance::Draw(int elapsedTime)
 
 	// Pause menu
 	if (_pauseMenu->_paused) {
-		/*std::stringstream menuStream;
-		menuStream << "Paused!";*/
-
 		SpriteBatch::Draw(_pauseMenu->_menuBackground, _pauseMenu->_menuRectangle, nullptr);
-		/*SpriteBatch::DrawString(menuStream.str().c_str(), _pauseMenu->_menuStringPosition, Color::Red);*/
+		
 	}
-	if (_mainMenu->_start) {
-		/*std::stringstream menuStream;
-		menuStream << "Press Spacebar to begin";*/
+	if (_mainMenu->_start) {		
 
 		SpriteBatch::Draw(_mainMenu->_mainMenuBackground, _mainMenu->_mainMenuRectangle, nullptr);
-		/*SpriteBatch::DrawString(menuStream.str().c_str(), _pauseMenu->_menuStringPosition, Color::Red);*/
+		
 	}
 	if (gameOver) {
 		SpriteBatch::Draw(_gameOverScreen->_mainMenuBackground, _gameOverScreen->_mainMenuRectangle, nullptr);
