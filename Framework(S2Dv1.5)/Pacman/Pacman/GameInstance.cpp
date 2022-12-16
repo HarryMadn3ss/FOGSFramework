@@ -33,6 +33,9 @@ GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0
 	
 	_mainMenu = new MainMenu();
 	_mainMenu->_start = true;
+
+	_background = new Background;
+	_background->_texture = new Texture2D();
 	
 
 	_pauseMenu = new PauseMenu();
@@ -48,12 +51,16 @@ GameInstance::GameInstance(int argc, char* argv[]) : Game(argc, argv), _cSpeed(0
 
 	
 	
-	for (int i = 0; i < SIMPLEENEMYCOUNT; i++)
+	for (int i = 0; i < ENEMYCOUNT; i++)
 	{
-		_ghost[i] = new SimpleEnemy();
-		_ghost[i]->_direction = 0;
-		_ghost[i]->_speed = 0.2f;
-		_ghost[i]->_health = 2;
+		_enemy[i] = new ChasingEnemy();
+		_enemy[i]->_direction = 0;
+		_enemy[i]->_speed = 0.1f;
+		_enemy[i]->_health = 2;
+		_enemy[i]->_rotation = 0;
+		_enemy[i]->_scale = 1;
+		_enemy[i]->_color = new Color(1, 1, 1, 1);
+		_enemy[i]->_origin = new Vector2(32, 32);
 	}
 	
 
@@ -80,6 +87,7 @@ GameInstance::~GameInstance()
 	delete _player->_texture;
 	delete _player->_sourceRect;	
 	delete _player;
+	_player = nullptr;
 
 
 	for (int i = 0; i < PROJECTILECOUNT; i++) {
@@ -87,6 +95,7 @@ GameInstance::~GameInstance()
 		delete _projectile[i]->_position;
 		delete _projectile[i]->_sourceRect;
 		delete _projectile[i];
+		_projectile[i] = nullptr;
 	}
 	
 	delete _soundManager->_coin;
@@ -95,13 +104,16 @@ GameInstance::~GameInstance()
 	delete _soundManager->_dead;
 	delete _soundManager->_enemyHurt;
 	delete _soundManager->_heart;
+	delete _soundManager->_enemySpawn;
 	delete _soundManager;
+	_soundManager = nullptr;
 
 	for (int i = 0; i < COLLECTABLECOUNT; i++) {
 		delete _collectable[i]->_texture;
 		delete _collectable[i]->_rect;
 		delete _collectable[i]->_position;
 		delete _collectable[i];
+		_collectable[i] = nullptr;
 	}
 
 	for (int i = 0; i < HEARTCOUNT; i++) {
@@ -109,21 +121,32 @@ GameInstance::~GameInstance()
 		delete _heart[i]->_rect;
 		delete _heart[i]->_position;
 		delete _heart[i];
+		_heart[i] = nullptr;
 	}
 
-	for (int i = 0; i < SIMPLEENEMYCOUNT; i++) {
-		delete _ghost[i]->_texture;
-		delete _ghost[i]->_sourceRect;
-		delete _ghost[i]->_position;
-		delete _ghost[i];
+	for (int i = 0; i < ENEMYCOUNT; i++) {
+		delete _enemy[i]->_texture;
+		delete _enemy[i]->_sourceRect;
+		delete _enemy[i]->_position;
+		delete _enemy[i]->_color;
+		delete _enemy[i]->_origin;
+		delete _enemy[i];
+		_enemy[i] = nullptr;
 	}
 
 	delete _pauseMenu->_menuBackground;
 	delete _pauseMenu->_menuRectangle;
 	delete _pauseMenu->_menuStringPosition;
+	delete _pauseMenu;
+	_pauseMenu = nullptr;
 	delete _mainMenu->_mainMenuBackground;
 	delete _mainMenu->_mainMenuRectangle;
 	delete _mainMenu->_mainMenuStringPosition;
+	delete _mainMenu;
+	_mainMenu = nullptr;
+	delete _background->_sourceRect;
+	delete _background->_texture;
+	_background = nullptr;
 }
 
 void GameInstance::LoadContent()
@@ -151,15 +174,15 @@ void GameInstance::LoadContent()
 		_projectile[i]->_beenFired = false;
 	}	
 
-	//load ghost
-	Texture2D* ghostTex = new Texture2D();
-	ghostTex->Load("Textures/GhostBlue.png", false);
+	//load enemy
+	Texture2D* enemyTex = new Texture2D();
+	enemyTex->Load("Textures/zombie.png", false);
 
-	for (int i = 0; i < SIMPLEENEMYCOUNT; i++)
+	for (int i = 0; i < ENEMYCOUNT; i++)
 	{
-		_ghost[i]->_texture = ghostTex;
-		_ghost[i]->_position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
-		_ghost[i]->_sourceRect = new Rect(0.0f, 0.0f, 20, 20);
+		_enemy[i]->_texture = enemyTex;		
+		_enemy[i]->_position = new Vector2(10000, 10000);
+		_enemy[i]->_sourceRect = new Rect(0.0f, 0.0f, 64, 64);
 	}
 
 	
@@ -176,7 +199,7 @@ void GameInstance::LoadContent()
 		
 	}
 
-	checkOverlapCollectable();
+	CheckOverlapCollectable();
 
 	Texture2D* heartTex = new Texture2D();
 	heartTex->Load("Textures/Heart.png", false);
@@ -212,10 +235,36 @@ void GameInstance::LoadContent()
 	_mainMenu->_mainMenuRectangle = new Rect(0.0f, 0.0f, Graphics::GetViewportWidth(), Graphics::GetViewportHeight());
 
 	_mainMenu->_mainMenuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.0f, Graphics::GetViewportHeight() / 2.0f);
+
+	//background
+	_background->_sourceRect = new Rect(0.0f, 0.0f, Graphics::GetViewportWidth(), Graphics::GetViewportHeight());
+	_background->_texture->Load("Textures/background.png", false);
 }
 
 void GameInstance::Update(int elapsedTime)
 {
+
+	if (!_mainMenu->_start) {
+		gameRunTime += static_cast<float>(elapsedTime) / 1000;
+		timeSinceSpawn += static_cast<float>(elapsedTime) / 1000;
+
+		if (timeSinceSpawn >= 2)
+		{
+			for(int i = 0; i < ENEMYCOUNT; i++)
+			{
+				if (_enemy[i]->isActive != true)
+				{
+					_enemy[i]->isActive = true;
+					_enemy[i]->_position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
+					_soundManager->Play(SoundManager::SOUND_NAMES::ENEMYSPAWN);
+					timeSinceSpawn = 0;
+					break;
+				}
+			}
+		}
+	}
+	
+
 	// Gets the current state of the keyboard
 	Input::KeyboardState* keyboardState = Input::Keyboard::GetState();
 	Input::MouseState* mouseState = Input::Mouse::GetState();
@@ -239,16 +288,22 @@ void GameInstance::Update(int elapsedTime)
 			if (!_player->_dead) {
 				Input(elapsedTime, keyboardState, mouseState);				
 			}			
-			updatingPlayer(elapsedTime);
-			updatingCollectable(elapsedTime);
-			updateSimpleEnemy(_ghost[0], elapsedTime);
-			checkSimpleEnemyCollision();
-			checkCollectableCollision();
-			updatingHeartCollectable(elapsedTime);
-			checkHeartCollision();
-			bulletCollision();
+			UpdatingPlayer(elapsedTime);
+			UpdatingCollectable(elapsedTime);
+
+			for(int i = 0; i < ENEMYCOUNT; i++)
+			{
+				_enemy[i]->updateEnemy(_player, elapsedTime);
+			}
+
+			
+			CheckSimpleEnemyCollision();
+			CheckCollectableCollision();
+			UpdatingHeartCollectable(elapsedTime);
+			CheckHeartCollision();
+			BulletCollision();
 			for (int i = 0; i < PROJECTILECOUNT; i++) {
-				updateBullet(_projectile[i], elapsedTime);
+				UpdateBullet(_projectile[i], elapsedTime);
 			}
 			
 		}
@@ -263,6 +318,7 @@ void GameInstance::Draw(int elapsedTime)
 
 	SpriteBatch::BeginDraw(); // Starts Drawing
 
+	SpriteBatch::Draw(_background->_texture, _background->_sourceRect, nullptr);
 	
 	SpriteBatch::Draw(_player->_texture, _player->_position, _player->_sourceRect);
 
@@ -282,8 +338,8 @@ void GameInstance::Draw(int elapsedTime)
 		SpriteBatch::Draw(_heart[i]->_texture, _heart[i]->_position, _heart[i]->_rect);
 	}
 
-	for (int i = 0; i < SIMPLEENEMYCOUNT; i++) {
-		SpriteBatch::Draw(_ghost[i]->_texture, _ghost[i]->_position, _ghost[i]->_sourceRect);
+	for (int i = 0; i < ENEMYCOUNT; i++) {
+		SpriteBatch::Draw(_enemy[i]->_texture, _enemy[i]->_position, _enemy[i]->_sourceRect, _enemy[i]->_origin, _enemy[i]->_scale, _enemy[i]->_rotation, _enemy[i]->_color, SpriteEffect::NONE);
 	}
 
 	// Draws String
@@ -304,6 +360,8 @@ void GameInstance::Draw(int elapsedTime)
 		SpriteBatch::Draw(_pauseMenu->_menuBackground, _pauseMenu->_menuRectangle, nullptr);
 		SpriteBatch::DrawString(menuStream.str().c_str(), _pauseMenu->_menuStringPosition, Color::Red);
 	}
+
+	
 
 	SpriteBatch::EndDraw(); // Ends Drawing
 }
@@ -373,7 +431,7 @@ void GameInstance::Input(int elapsedTime, Input::KeyboardState* state, Input::Mo
 			{
 				_player->_isFiring = true;
 				_player->_bulletCount++;
-				createBullet(elapsedTime);
+				CreateBullet(elapsedTime);
 				_player->_firingCooldown = _player->_cooldownBetShot; //10 seconds from the 16ms per frame
 			}
 		}
@@ -383,7 +441,7 @@ void GameInstance::Input(int elapsedTime, Input::KeyboardState* state, Input::Mo
 			{
 				_player->_isFiring = true;
 				_player->_bulletCount++;
-				createBullet(elapsedTime);
+				CreateBullet(elapsedTime);
 				_player->_firingCooldown = _player->_cooldownBetShot; //10 seconds from the 16ms per frame
 			}
 		}
@@ -393,7 +451,7 @@ void GameInstance::Input(int elapsedTime, Input::KeyboardState* state, Input::Mo
 			{
 				_player->_isFiring = true;
 				_player->_bulletCount++;
-				createBullet(elapsedTime);
+				CreateBullet(elapsedTime);
 				_player->_firingCooldown = _player->_cooldownBetShot; //10 seconds from the 16ms per frame
 			}
 		}
@@ -403,7 +461,7 @@ void GameInstance::Input(int elapsedTime, Input::KeyboardState* state, Input::Mo
 			{
 				_player->_isFiring = true;
 				_player->_bulletCount++;
-				createBullet(elapsedTime);
+				CreateBullet(elapsedTime);
 				_player->_firingCooldown = _player->_cooldownBetShot; //10 seconds from the 16ms per frame
 			}
 		}
@@ -422,7 +480,7 @@ void GameInstance::Input(int elapsedTime, Input::KeyboardState* state, Input::Mo
 	}
 }
 
-void GameInstance::updatingPlayer(int elapsedTime) {
+void GameInstance::UpdatingPlayer(int elapsedTime) {
 	_player->_currentFrameTime += elapsedTime;
 	
 	if (!_player->_invincible && !_player->_isFiring) {
@@ -514,7 +572,7 @@ void GameInstance::CheckPlayerWallCollison() {
 	}
 }
 
-void GameInstance::updatingCollectable(int elapsedTime) {
+void GameInstance::UpdatingCollectable(int elapsedTime) {
 	//animating the collectable
 
 	for (int i = 0; i < COLLECTABLECOUNT; i++) {
@@ -539,7 +597,7 @@ void GameInstance::updatingCollectable(int elapsedTime) {
 	}
 }
 
-void GameInstance::updatingHeartCollectable(int elapsedTime) {
+void GameInstance::UpdatingHeartCollectable(int elapsedTime) {
 
 	for (int i = 0; i <	HEARTCOUNT; i++) {
 
@@ -562,23 +620,23 @@ void GameInstance::updatingHeartCollectable(int elapsedTime) {
 	}
 }
 
-void GameInstance::updateSimpleEnemy(SimpleEnemy* ghost, int elapsedTime) {
-	if (ghost->_direction == 0) {
-		ghost->_position->X += ghost->_speed * elapsedTime;
-	}
-	else if (ghost->_direction == 1) {
-		ghost->_position->X -= ghost->_speed * elapsedTime;
-	}
+//void GameInstance::updateEnemy(Enemy* ghost, int elapsedTime) {
+//	if (ghost->_direction == 0) {
+//		ghost->_position->X += ghost->_speed * elapsedTime;
+//	}
+//	else if (ghost->_direction == 1) {
+//		ghost->_position->X -= ghost->_speed * elapsedTime;
+//	}
+//
+//	if (ghost->_position->X + ghost->_sourceRect->Width >= Graphics::GetViewportWidth()) {
+//		ghost->_direction = 1;
+//	}
+//	else if (ghost->_position->X <= 0) {
+//		ghost->_direction = 0;
+//	}
+//}
 
-	if (ghost->_position->X + ghost->_sourceRect->Width >= Graphics::GetViewportWidth()) {
-		ghost->_direction = 1;
-	}
-	else if (ghost->_position->X <= 0) {
-		ghost->_direction = 0;
-	}
-}
-
-void GameInstance::checkSimpleEnemyCollision() {
+void GameInstance::CheckSimpleEnemyCollision() {
 	int playerTop = _player->_position->Y;
 	int playerRight = _player->_position->X + _player->_sourceRect->Width;
 	int playerBottom = _player->_position->Y + _player->_sourceRect->Height;
@@ -590,17 +648,17 @@ void GameInstance::checkSimpleEnemyCollision() {
 	int enemyLeft = 0;
 
 	if (!_player->_invincible) {
-		for (int i = 0; i < SIMPLEENEMYCOUNT; i++) {
-			enemyTop = _ghost[i]->_position->Y;
-			enemyRight = _ghost[i]->_position->X + _ghost[i]->_sourceRect->Width;
-			enemyBottom = _ghost[i]->_position->Y + _ghost[i]->_sourceRect->Height;
-			enemyLeft = _ghost[i]->_position->X;
+		for (int i = 0; i < ENEMYCOUNT; i++) {
+			enemyTop = _enemy[i]->_position->Y;
+			enemyRight = _enemy[i]->_position->X + _enemy[i]->_sourceRect->Width;
+			enemyBottom = _enemy[i]->_position->Y + _enemy[i]->_sourceRect->Height;
+			enemyLeft = _enemy[i]->_position->X;
 
 			if ((playerBottom > enemyTop) && (playerTop < enemyBottom) && (playerLeft < enemyRight) && (playerRight > enemyLeft)) {
 				_player->_health -= 1;
 				_soundManager->Play(SoundManager::SOUND_NAMES::PLAYERHURT);
-				checkPlayerDead();				
-				i = SIMPLEENEMYCOUNT;
+				CheckPlayerDead();				
+				i = ENEMYCOUNT;
 				_player->_invincible = true;
 			}
 		}
@@ -609,7 +667,7 @@ void GameInstance::checkSimpleEnemyCollision() {
 
 }
 
-void GameInstance::checkCollectableCollision() {
+void GameInstance::CheckCollectableCollision() {
 	int playerTop = _player->_position->Y;
 	int playerRight = _player->_position->X + _player->_sourceRect->Width;
 	int playerBottom = _player->_position->Y + _player->_sourceRect->Height;
@@ -634,7 +692,7 @@ void GameInstance::checkCollectableCollision() {
 	}
 }
 
-void GameInstance::checkHeartCollision() {
+void GameInstance::CheckHeartCollision() {
 	int playerTop = _player->_position->Y;
 	int playerRight = _player->_position->X + _player->_sourceRect->Width;
 	int playerBottom = _player->_position->Y + _player->_sourceRect->Height;
@@ -659,9 +717,10 @@ void GameInstance::checkHeartCollision() {
 	}
 }
 
-void GameInstance::checkPlayerDead() {
+void GameInstance::CheckPlayerDead() {
 	if (_player->_health < 1) {
 		_player->_dead = true;
+		GameOver();
 		_soundManager->Play(SoundManager::SOUND_NAMES::DEAD);
 		if (_player->_health < 0) {
 			_player->_health = 0;
@@ -670,7 +729,7 @@ void GameInstance::checkPlayerDead() {
 	
 }
 
-void GameInstance::checkOverlapCollectable() {
+void GameInstance::CheckOverlapCollectable() {
 	bool isOverlapping = true;
 
 	srand(time(NULL));
@@ -716,7 +775,7 @@ void GameInstance::checkOverlapCollectable() {
 	}while (isOverlapping);
 }
 
-void GameInstance::createBullet(int elapsedTime) {
+void GameInstance::CreateBullet(int elapsedTime) {
 	if (_player->_bulletCount >= PROJECTILECOUNT){
 		_player->_bulletCount = 0;
 	}
@@ -727,7 +786,7 @@ void GameInstance::createBullet(int elapsedTime) {
 }
 
 
-void GameInstance::updateBullet(Projectile* _bullet, int elapsedTime) {
+void GameInstance::UpdateBullet(Projectile* _bullet, int elapsedTime) {
 
 	if (_bullet->_direction == 0) {
 		_bullet->_position->Y += 1 * elapsedTime;		
@@ -748,7 +807,7 @@ void GameInstance::updateBullet(Projectile* _bullet, int elapsedTime) {
 	
 }
 
-void GameInstance::bulletCollision() {
+void GameInstance::BulletCollision() {
 	int bulletTop = 0;
 	int bulletRight = 0;
 	int bulletBottom = 0;
@@ -762,12 +821,12 @@ void GameInstance::bulletCollision() {
 	
 			
 
-		for (int i = 0; i < SIMPLEENEMYCOUNT; i++)
+		for (int i = 0; i < ENEMYCOUNT; i++)
 		{
-			enemyTop = _ghost[i]->_position->Y;
-			enemyRight = _ghost[i]->_position->X + _ghost[i]->_sourceRect->Width;
-			enemyBottom = _ghost[i]->_position->Y + _ghost[i]->_sourceRect->Height;
-			enemyLeft = _ghost[i]->_position->X;
+			enemyTop = _enemy[i]->_position->Y;
+			enemyRight = _enemy[i]->_position->X + _enemy[i]->_sourceRect->Width;
+			enemyBottom = _enemy[i]->_position->Y + _enemy[i]->_sourceRect->Height;
+			enemyLeft = _enemy[i]->_position->X;
 
 			for (int j = 0; j < PROJECTILECOUNT; j++)
 			{
@@ -782,10 +841,10 @@ void GameInstance::bulletCollision() {
 					{
 						_projectile[j]->_beenFired = false;
 						_projectile[j]->_position = new Vector2(100000, 100000);
-						_ghost[i]->_health--;
+						_enemy[i]->_health--;
 						_soundManager->Play(SoundManager::SOUND_NAMES::ENEMYHURT);
-						if (_ghost[i]->_health <= 0) {
-							_ghost[i]->_position = new Vector2(10000, 100000);
+						if (_enemy[i]->_health <= 0) {
+							_enemy[i]->_position = new Vector2(10000, 100000);
 							_player->_score += 350;
 						}
 						
@@ -799,6 +858,6 @@ void GameInstance::bulletCollision() {
 
 
 
-void gameOver() {
-
+void GameInstance::GameOver() {
+	gameOver = true;
 }

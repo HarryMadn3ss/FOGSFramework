@@ -15,7 +15,7 @@
 #define COLLECTABLECOUNT 50
 #define HEARTCOUNT 3
 #define PROJECTILECOUNT 50
-#define SIMPLEENEMYCOUNT 1
+#define ENEMYCOUNT 50
 
 // Reduces the amount of typing by including all classes in S2D namespace
 using namespace S2D;
@@ -76,22 +76,102 @@ struct Collectable
 	int _currentFrameTime;
 };
 
-struct SimpleEnemy 
+struct Enemy 
 {
 	Vector2* _position;
+	Vector2* _origin;
 	Texture2D* _texture;
 	Rect* _sourceRect;
+	Color* _color;
 
 	int _health;
 
 	int _direction;
 	float _speed;
+
+	bool isActive;
+
+	float _scale;
+	float _rotation;
+
+	int _frame = 0;
+	int _currentFrameTime = 0;
+	const int _cFrameTime = 8000;
+	
+	virtual void updateEnemy(Player* _player, int elapsedTime) {
+		if (isActive) {
+			if (_direction == 0) {
+				_position->X += _speed * elapsedTime;
+			}
+			else if (_direction == 1) {
+				_position->X -= _speed * elapsedTime;
+			}
+
+			if (_position->X + _sourceRect->Width >= Graphics::GetViewportWidth()) {
+				_direction = 1;
+			}
+			else if (_position->X <= 0) {
+				_direction = 0;
+			}
+		}
+		
+	}
 };
 
+struct ChasingEnemy : public Enemy {
+
+	ChasingEnemy()
+	{
+		_scale = 1;
+		_rotation = 0;
+	}
+
+	void updateEnemy(Player* _player, int elapsedTime){
+		if (isActive) {
+			Vector2 direction = *_player->_position - *_position;
+			direction.Normalize();
+
+			*_position += direction * (_speed * elapsedTime);
+
+			if (direction.X > 0)
+			{
+				_rotation = MathHelper::ToDegrees(Vector2::Dot(Vector2(0, -1), direction));
+			}
+			else
+			{
+				_rotation = MathHelper::ToDegrees(Vector2::Dot(Vector2(0, -1), direction * -1)) + 180;
+			}
+
+			for (int i = 0; i < ENEMYCOUNT; i++) {
+
+
+				_currentFrameTime += elapsedTime;
+
+				if (_currentFrameTime > _cFrameTime) {
+					_frame++;
+
+					if (_frame >= 4) {
+						_frame = 0;
+					}
+
+					_currentFrameTime = 0;
+
+				}
+								
+				_sourceRect->X = _sourceRect->Width * _frame;
+			}
+		}
+	};
+};
+
+struct Background {
+	Rect* _sourceRect;
+	Texture2D* _texture;
+};
 
 struct SoundManager 
 {
-	enum SOUND_NAMES{ COIN, HEART, PLAYERHURT, DEAD, ENEMYHURT, GUNSHOT};
+	enum SOUND_NAMES{ COIN, HEART, PLAYERHURT, DEAD, ENEMYHURT, GUNSHOT, ENEMYSPAWN};
 
 
 	SoundEffect* _coin;
@@ -101,6 +181,7 @@ struct SoundManager
 	SoundEffect* _dead;
 
 	SoundEffect* _enemyHurt;
+	SoundEffect* _enemySpawn;
 
 	SoundEffect* _gunShot;
 
@@ -111,6 +192,7 @@ struct SoundManager
 		_dead = new SoundEffect;
 		_enemyHurt = new SoundEffect;
 		_heart = new SoundEffect;
+		_enemySpawn = new SoundEffect;
 	};
 
 	void Load() {
@@ -120,6 +202,7 @@ struct SoundManager
 		_gunShot->Load("Audio/gunShot.wav");
 		_playerHurt->Load("Audio/playerHurt.wav");
 		_heart->Load("Audio/heart.wav");
+		_enemySpawn->Load("Audio/enemySpawn.wav");
 	};
 
 	void Play(SOUND_NAMES soundEffect) {
@@ -141,6 +224,9 @@ struct SoundManager
 			break;
 		case GUNSHOT:
 			Audio::Play(_gunShot);
+			break;
+		case ENEMYSPAWN:
+			Audio::Play(_enemySpawn);
 			break;
 		}
 	}
@@ -167,18 +253,23 @@ struct PauseMenu {
 // Declares the Pacman class which inherits from the Game class.
 // This allows us to overload the Game class methods to help us
 // load content, draw and update our game.
-class GameInstance : public Game  //rename once i have a game title
+class GameInstance : public Game  
 {
 private:
 	
 	Player* _player;
 	Collectable* _collectable[COLLECTABLECOUNT];
 	Collectable* _heart[HEARTCOUNT];
-	SimpleEnemy* _ghost[SIMPLEENEMYCOUNT];
+	Enemy* _enemy[ENEMYCOUNT];
 	Projectile* _projectile[PROJECTILECOUNT];
 	MainMenu* _mainMenu;
 	PauseMenu* _pauseMenu;
+	Background* _background;
 
+	float gameRunTime;
+	float timeSinceSpawn = 0;
+
+	bool gameOver = false;
 
 	const float _cSpeed;
 	const int _cFrameTime;
@@ -218,31 +309,31 @@ private:
 
 	void Input(int elaspedTime, Input::KeyboardState* state, Input::MouseState* mouseState);
 
-	void updatingPlayer(int elapsedTime);
+	void UpdatingPlayer(int elapsedTime);
 
 	void CheckPlayerWallCollison();
 
-	void updatingCollectable(int elapsedTime);
+	void UpdatingCollectable(int elapsedTime);
 
-	void checkCollectableCollision();
+	void CheckCollectableCollision();
 
-	void checkSimpleEnemyCollision();
+	void CheckSimpleEnemyCollision();
 
-	void updateSimpleEnemy(SimpleEnemy*, int elaspedTime);
+	/*void updateEnemy(int elaspedTime);*/
 
-	void checkPlayerDead();
+	void CheckPlayerDead();
 
-	void updatingHeartCollectable(int elapsedTime);
+	void UpdatingHeartCollectable(int elapsedTime);
 
-	void checkHeartCollision();
+	void CheckHeartCollision();
 
-	void checkOverlapCollectable();
+	void CheckOverlapCollectable();
 
-	void createBullet(int elapsedTime);
+	void CreateBullet(int elapsedTime);
 
-	void updateBullet(Projectile*, int elapsedTime);
+	void UpdateBullet(Projectile*, int elapsedTime);
 
-	void bulletCollision();
+	void BulletCollision();
 
-	void gameOver();
+	void GameOver();
 };
